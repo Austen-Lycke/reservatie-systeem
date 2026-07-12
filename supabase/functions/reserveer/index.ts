@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
     p_naam: invoer.naam,
     p_email: invoer.email,
     p_telefoon: invoer.telefoon,
+    p_type_feest: invoer.typeFeest,
     p_aantal_personen: invoer.aantalPersonen,
     p_start_tijd: invoer.startTijd,
     p_eind_tijd: invoer.eindTijd,

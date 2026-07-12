@@ -5,6 +5,10 @@ const MAANDEN = [
   'juli', 'augustus', 'september', 'oktober', 'november', 'december'
 ];
 const MAX_EINDTIJD = '02:00'; // uiterlijk 02:00 's nachts (na middernacht)
+const TYPE_FEEST_VOORBEELDEN = [
+  'lentefeest', 'communie', 'verjaardag', 'pensioenviering',
+  'sweet sixteen', 'sweet eighteen', 'personeelsfeest', 'bijeenkomst'
+];
 const STATUS_BETAALD = 'betaald';
 const STATUS_IN_AFWACHTING = 'in_afwachting';
 
@@ -240,12 +244,52 @@ function renderKalender() {
   }
 }
 
+// Geanimeerde placeholder voor "Type feest": typt de voorbeelden één voor
+// één uit, wist ze weer en gaat door naar het volgende voorbeeld.
+let typeFeestTimer = null;
+
+function startTypeFeestAnimatie() {
+  const veld = document.getElementById('type-feest');
+  let woordIndex = 0;
+  let positie = 0;
+  let wissen = false;
+
+  function stap() {
+    const woord = TYPE_FEEST_VOORBEELDEN[woordIndex];
+    let wachttijd;
+    if (!wissen) {
+      positie++;
+      wachttijd = positie === woord.length ? 1600 : 90; // even blijven staan bij het volledige woord
+      if (positie === woord.length) wissen = true;
+    } else {
+      positie--;
+      wachttijd = 40;
+      if (positie === 0) {
+        wissen = false;
+        woordIndex = (woordIndex + 1) % TYPE_FEEST_VOORBEELDEN.length;
+        wachttijd = 350;
+      }
+    }
+    veld.placeholder = `bv. ${woord.slice(0, positie)}`;
+    typeFeestTimer = setTimeout(stap, wachttijd);
+  }
+
+  stopTypeFeestAnimatie();
+  stap();
+}
+
+function stopTypeFeestAnimatie() {
+  clearTimeout(typeFeestTimer);
+  typeFeestTimer = null;
+}
+
 function openDialoog(datumStr) {
   geselecteerdeDatum = datumStr;
   document.getElementById('dialoog-datum').textContent = datumMooi(datumStr);
   formulierEl.reset();
   verbergFormulierFout();
   werkOpbouwHintBij();
+  startTypeFeestAnimatie();
   dialoogEl.showModal();
 }
 
@@ -297,6 +341,7 @@ async function verwerkFormulier(event) {
   const naam = document.getElementById('naam').value.trim();
   const email = document.getElementById('email').value.trim();
   const telefoon = document.getElementById('telefoon').value.trim();
+  const typeFeest = document.getElementById('type-feest').value.trim();
   const aantalPersonen = Number(document.getElementById('aantal-personen').value);
   const startTijd = document.getElementById('start-tijd').value;
   const eindTijd = document.getElementById('eind-tijd').value;
@@ -318,7 +363,7 @@ async function verwerkFormulier(event) {
   }
 
   const details = {
-    naam, email, telefoon, aantalPersonen,
+    naam, email, telefoon, typeFeest, aantalPersonen,
     startTijd, eindTijd, opbouwMinuten,
     opbouwVanaf: minutenNaarTijd(tijdNaarMinuten(startTijd) - opbouwMinuten),
     opmerkingen
@@ -381,6 +426,8 @@ function koppelGebeurtenissen() {
     renderKalender();
   });
   document.getElementById('annuleer-knop').addEventListener('click', sluitDialoog);
+  // Vangt ook sluiten via Esc af, niet alleen via de annuleerknop.
+  dialoogEl.addEventListener('close', stopTypeFeestAnimatie);
   formulierEl.addEventListener('submit', verwerkFormulier);
   document.getElementById('start-tijd').addEventListener('input', werkOpbouwHintBij);
   document.getElementById('opbouw').addEventListener('change', werkOpbouwHintBij);
