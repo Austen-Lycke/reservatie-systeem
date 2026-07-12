@@ -18,6 +18,25 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const EMAIL_ONTVANGER = 'info@8-duust.be';
 
+// Weergaveteksten voor de extra opties in de mail. Alleen labels — de
+// bedragen komen uit de prijsregels die bij het boeken zijn vastgelegd.
+const MUZIEK_LABELS: Record<string, string> = {
+  eigenDj: 'Eigen DJ (voorziet zelf materiaal)',
+  spotify: 'Eigen Spotify-playlist',
+  bar: 'Bar verzorgt de muziek'
+};
+const SPRINGKASTEEL_LABELS: Record<string, string> = {
+  vzw: 'Springkasteel van de vzw',
+  eigenLeverancier: 'Eigen leverancier',
+  geen: 'Geen'
+};
+const DRANKKAART_LABELS: Record<string, string> = {
+  vooraf20: 'Vooraf besteld (€ 20 per kaart)',
+  vooraf12: 'Vooraf besteld (€ 12 per kaart)',
+  terPlaatse: 'Regelt de klant ter plaatse',
+  geen: 'Geen'
+};
+
 // Waarden netjes tonen in de mail; lege velden worden een streepje.
 function toon(waarde: unknown): string {
   const tekst = String(waarde ?? '').trim();
@@ -56,9 +75,32 @@ async function stuurBevestigingsmail(
     ['Aantal personen', toon(details.aantal_personen)],
     ['Uren', `${toon(details.start_tijd)} – ${toon(details.eind_tijd)}`],
     ['Opbouw', opbouw],
-    ['Opmerkingen', toon(details.opmerkingen)],
-    ['Mollie-betaling', toon(betalingId)]
+    ['Opmerkingen', toon(details.opmerkingen)]
   ];
+
+  // Extra opties: keuzes zonder prijs als gewone rijen, daarna de prijsregels
+  // zoals ze bij het boeken zijn vastgelegd. Oude reserveringen zonder
+  // extra_opties tonen alleen de bestaande rijen.
+  const extra = details.extra_opties as {
+    keuzes?: Record<string, unknown>;
+    prijsregels?: { label: string; bedrag: number }[];
+  } | null;
+  const keuzes = extra?.keuzes;
+  if (keuzes) {
+    const drankkaarten = (keuzes.drankkaarten ?? {}) as Record<string, unknown>;
+    rijen.push(
+      ['Eigen foodtruck', keuzes.eigenFoodtruck ? 'Ja (forfait € 25)' : 'Nee'],
+      ['BBQ zelf meebrengen', keuzes.bbq ? 'Ja' : 'Nee'],
+      ['Drankkaarten', DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—'],
+      ['Muziek', MUZIEK_LABELS[String(keuzes.muziek)] ?? '—'],
+      ['Springkasteel', SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—']
+    );
+  }
+  for (const regel of extra?.prijsregels ?? []) {
+    rijen.push([toon(regel.label), `€ ${Number(regel.bedrag)}`]);
+  }
+  rijen.push(['Totaal betaald', `€ ${Number(details.totaal_bedrag ?? 60)}`]);
+  rijen.push(['Mollie-betaling', toon(betalingId)]);
 
   const tabel = rijen.map(([label, waarde]) =>
     `<tr><td style="padding:6px 16px 6px 0;color:#555;white-space:nowrap;vertical-align:top">${label}</td>` +

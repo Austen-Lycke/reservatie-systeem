@@ -13,6 +13,20 @@ const TYPE_FEEST_VOORBEELDEN = [
 const STATUS_BETAALD = 'betaald';
 const STATUS_IN_AFWACHTING = 'in_afwachting';
 
+// Prijzen in hele euro's, alleen voor de live totaalweergave. De server
+// (supabase/functions/reserveer) is de enige autoriteit over prijzen;
+// wijzig prijzen dus altijd op beide plekken.
+const PRIJZEN = {
+  reservatiekosten: 60,
+  frietjesFrikandel: 7,   // per persoon
+  hamburgerFrietjes: 8,   // per persoon
+  pita: 6,                // per persoon
+  eigenFoodtruck: 25,     // forfait stroom/water/kabels/afval
+  drankkaartVooraf20: 20, // per kaart
+  drankkaartVooraf12: 12, // per kaart
+  springkasteelEigenLeverancier: 15 // forfait stroom/kabels
+};
+
 // ---------- Datum-hulpfuncties ----------
 
 function datumNaarString(d) {
@@ -372,6 +386,136 @@ function stopTypeFeestAnimatie() {
   typeFeestTimer = null;
 }
 
+// ---------- Extra opties ----------
+
+// Toont of verbergt de detailblokken op basis van de gekozen radio's.
+// Elk blok draagt data-toon-bij="veldnaam=waarde1|waarde2". Velden in een
+// verborgen blok worden ook uitgeschakeld, zodat verlaten waarden (bv. eerst
+// gerechten invullen en dan toch "nee" kiezen) nooit meetellen of meegaan.
+function werkExtraDetailsBij() {
+  for (const blok of formulierEl.querySelectorAll('.extra-detail')) {
+    const [naam, waarden] = blok.dataset.toonBij.split('=');
+    const huidig = formulierEl.elements[naam]?.value;
+    const zichtbaar = waarden.split('|').includes(huidig);
+    blok.classList.toggle('verborgen', !zichtbaar);
+    for (const veld of blok.querySelectorAll('input')) veld.disabled = !zichtbaar;
+  }
+}
+
+function veldAantal(id) {
+  const veld = document.getElementById(id);
+  if (veld.disabled) return 0;
+  return Number(veld.value) || 0;
+}
+
+const GERECHTEN = [
+  ['ft-frikandel', 'frietjesFrikandel', 'Frietjes met frikandel'],
+  ['ft-hamburger', 'hamburgerFrietjes', 'Hamburger met frietjes'],
+  ['ft-pita', 'pita', 'Pita']
+];
+
+// Spiegel van de berekening op de server, alleen voor de live weergave.
+function berekenPrijsregels() {
+  const regels = [{ label: 'Reservatiekosten', bedrag: PRIJZEN.reservatiekosten }];
+  if (formulierEl.elements.foodtruckVzw.value === 'ja') {
+    for (const [id, prijsSleutel, label] of GERECHTEN) {
+      const aantal = veldAantal(id);
+      if (aantal > 0) {
+        regels.push({
+          label: `${label} (${aantal} × € ${PRIJZEN[prijsSleutel]})`,
+          bedrag: aantal * PRIJZEN[prijsSleutel]
+        });
+      }
+    }
+  }
+  if (formulierEl.elements.eigenFoodtruck.value === 'ja') {
+    regels.push({ label: 'Eigen foodtruck (forfait)', bedrag: PRIJZEN.eigenFoodtruck });
+  }
+  const drankkaarten = formulierEl.elements.drankkaarten.value;
+  if (drankkaarten === 'vooraf20' || drankkaarten === 'vooraf12') {
+    const prijsPerKaart = drankkaarten === 'vooraf20'
+      ? PRIJZEN.drankkaartVooraf20 : PRIJZEN.drankkaartVooraf12;
+    const aantal = veldAantal('drankkaarten-aantal');
+    if (aantal > 0) {
+      regels.push({
+        label: `Drankkaarten (${aantal} × € ${prijsPerKaart})`,
+        bedrag: aantal * prijsPerKaart
+      });
+    }
+  }
+  if (formulierEl.elements.springkasteel.value === 'eigenLeverancier') {
+    regels.push({
+      label: 'Springkasteel eigen leverancier (forfait)',
+      bedrag: PRIJZEN.springkasteelEigenLeverancier
+    });
+  }
+  return regels;
+}
+
+// Werkt de prijsregels, het totaal en het knoplabel bij; geeft het totaal terug.
+function werkTotaalBij() {
+  const regels = berekenPrijsregels();
+  const totaal = regels.reduce((som, regel) => som + regel.bedrag, 0);
+  document.getElementById('prijs-regels').innerHTML = regels
+    .map((regel) => `<div><span>${regel.label}</span><span>€ ${regel.bedrag}</span></div>`)
+    .join('');
+  document.getElementById('prijs-totaal').textContent = `€ ${totaal}`;
+  const knop = document.getElementById('bevestig-knop');
+  if (!knop.disabled) knop.textContent = `Reserveren en € ${totaal} betalen`;
+  return totaal;
+}
+
+// Bouwt het extras-object dat naar de server gaat. De server hervalideert
+// alles en berekent het bedrag opnieuw; dit is alleen de doorgegeven keuze.
+function verzamelExtras() {
+  const foodtruckGekozen = formulierEl.elements.foodtruckVzw.value === 'ja';
+  const drankkaartKeuze = formulierEl.elements.drankkaarten.value;
+  const drankkaartVooraf = drankkaartKeuze === 'vooraf20' || drankkaartKeuze === 'vooraf12';
+  return {
+    foodtruckVzw: foodtruckGekozen
+      ? {
+          gekozen: true,
+          frietjesFrikandel: veldAantal('ft-frikandel'),
+          hamburgerFrietjes: veldAantal('ft-hamburger'),
+          pita: veldAantal('ft-pita')
+        }
+      : false,
+    eigenFoodtruck: formulierEl.elements.eigenFoodtruck.value === 'ja',
+    bbq: formulierEl.elements.bbq.value === 'ja',
+    drankkaarten: {
+      keuze: drankkaartKeuze,
+      aantal: drankkaartVooraf ? veldAantal('drankkaarten-aantal') : undefined
+    },
+    muziek: formulierEl.elements.muziek.value,
+    springkasteel: formulierEl.elements.springkasteel.value
+  };
+}
+
+// Controle van de extra opties vóór verzenden; geeft een foutmelding of null.
+function valideerExtras(extras) {
+  if (extras.foodtruckVzw) {
+    const totaalGerechten = extras.foodtruckVzw.frietjesFrikandel +
+      extras.foodtruckVzw.hamburgerFrietjes + extras.foodtruckVzw.pita;
+    if (totaalGerechten < 1) {
+      return 'Kies minstens één gerecht bij de foodtruck van de vzw, of zet die optie op "nee".';
+    }
+    for (const [id] of GERECHTEN) {
+      const waarde = veldAantal(id);
+      if (!Number.isInteger(waarde) || waarde < 0 || waarde > 500) {
+        return 'Vul bij de foodtruck geldige aantallen in (0 t/m 500).';
+      }
+    }
+  }
+  const keuze = extras.drankkaarten.keuze;
+  if (keuze === 'vooraf20' || keuze === 'vooraf12') {
+    const aantal = extras.drankkaarten.aantal;
+    if (!Number.isInteger(aantal) || aantal < 1 || aantal > 500) {
+      return 'Vul een geldig aantal drankkaarten in (1 t/m 500).';
+    }
+  }
+  return null;
+}
+
 function openDialoog(datumStr) {
   geselecteerdeDatum = datumStr;
   document.getElementById('dialoog-datum').textContent = datumMooi(datumStr);
@@ -379,6 +523,8 @@ function openDialoog(datumStr) {
   verbergFormulierFout();
   werkEindTijdenBij();
   werkOpbouwHintBij();
+  werkExtraDetailsBij();
+  werkTotaalBij();
   startTypeFeestAnimatie();
   dialoogEl.showModal();
 }
@@ -455,12 +601,18 @@ async function verwerkFormulier(event) {
     toonFormulierFout('Deze datum is zojuist al door iemand anders gereserveerd.');
     return;
   }
+  const extras = verzamelExtras();
+  const extrasFout = valideerExtras(extras);
+  if (extrasFout) {
+    toonFormulierFout(extrasFout);
+    return;
+  }
 
   const details = {
     naam, email, telefoon, typeFeest, aantalPersonen,
     startTijd, eindTijd, opbouwMinuten,
     opbouwVanaf: minutenNaarTijd(tijdNaarMinuten(startTijd) - opbouwMinuten),
-    opmerkingen
+    opmerkingen, extras
   };
 
   const knop = document.getElementById('bevestig-knop');
@@ -479,7 +631,7 @@ async function verwerkFormulier(event) {
     toonFormulierFout(fout.message || 'Er ging iets mis. Probeer het opnieuw.');
   } finally {
     knop.disabled = false;
-    knop.textContent = 'Reserveren en € 60 betalen';
+    werkTotaalBij(); // zet ook het knoplabel ("Reserveren en € X betalen") terug
   }
   if (doorsturenNaar) {
     knop.disabled = true;
@@ -528,6 +680,12 @@ function koppelGebeurtenissen() {
     werkOpbouwHintBij();
   });
   document.getElementById('opbouw').addEventListener('change', werkOpbouwHintBij);
+  // Eén gedelegeerde listener voor alle extra opties: 'input' vuurt zowel
+  // voor radio's als voor de aantal-velden.
+  document.querySelector('.extra-opties').addEventListener('input', () => {
+    werkExtraDetailsBij();
+    werkTotaalBij();
+  });
   koppelTelefoonFormattering();
 }
 

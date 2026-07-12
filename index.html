@@ -105,20 +105,115 @@
       <label for="opmerkingen">Opmerkingen (optioneel)</label>
       <textarea id="opmerkingen" name="opmerkingen" rows="3" maxlength="1000"></textarea>
 
+      <fieldset class="extra-opties">
+        <legend>Extra opties (optioneel)</legend>
+
+        <div class="extra-sectie">
+          <span class="extra-vraag">Foodtruck van de vzw ("de Dikke Mier")?</span>
+          <div class="keuze-rij">
+            <label><input type="radio" name="foodtruckVzw" value="ja"> Ja</label>
+            <label><input type="radio" name="foodtruckVzw" value="nee" checked> Nee</label>
+          </div>
+          <div class="extra-detail verborgen" data-toon-bij="foodtruckVzw=ja">
+            <div class="gerecht-rij">
+              <label for="ft-frikandel">Frietjes met frikandel en saus — € 7,00 p.p.</label>
+              <input type="number" id="ft-frikandel" min="0" max="500" placeholder="0">
+            </div>
+            <div class="gerecht-rij">
+              <label for="ft-hamburger">Hamburger met frietjes en saus — € 8,00 p.p.</label>
+              <input type="number" id="ft-hamburger" min="0" max="500" placeholder="0">
+            </div>
+            <div class="gerecht-rij">
+              <label for="ft-pita">Pita met saus — € 6,00 p.p.</label>
+              <input type="number" id="ft-pita" min="0" max="500" placeholder="0">
+            </div>
+            <small>Vul per gerecht het aantal personen in.</small>
+          </div>
+        </div>
+
+        <div class="extra-sectie">
+          <span class="extra-vraag">Breng je een eigen foodtruck mee?</span>
+          <div class="keuze-rij">
+            <label><input type="radio" name="eigenFoodtruck" value="ja"> Ja</label>
+            <label><input type="radio" name="eigenFoodtruck" value="nee" checked> Nee</label>
+          </div>
+          <div class="extra-detail verborgen" data-toon-bij="eigenFoodtruck=ja">
+            <small>
+              Bij een eigen foodtruck rekenen we een forfait van <strong>€ 25,00</strong> aan
+              voor elektriciteit, water, gebruik van kabels en extra afvalverwerking.
+              Dit wordt bij het totaal geteld.
+            </small>
+          </div>
+        </div>
+
+        <div class="extra-sectie">
+          <span class="extra-vraag">Breng je zelf een BBQ mee?</span>
+          <div class="keuze-rij">
+            <label><input type="radio" name="bbq" value="ja"> Ja</label>
+            <label><input type="radio" name="bbq" value="nee" checked> Nee</label>
+          </div>
+        </div>
+
+        <div class="extra-sectie">
+          <span class="extra-vraag">Drankkaarten</span>
+          <div class="keuze-rij keuze-kolom">
+            <label><input type="radio" name="drankkaarten" value="vooraf20"> Vooraf bestellen — € 20,00 per kaart</label>
+            <label><input type="radio" name="drankkaarten" value="vooraf12"> Vooraf bestellen — € 12,00 per kaart</label>
+            <label><input type="radio" name="drankkaarten" value="terPlaatse"> Ik regel mijn drankkaarten liever ter plaatse</label>
+            <label><input type="radio" name="drankkaarten" value="geen" checked> Geen drankkaarten</label>
+          </div>
+          <div class="extra-detail verborgen" data-toon-bij="drankkaarten=vooraf20|vooraf12">
+            <div class="gerecht-rij">
+              <label for="drankkaarten-aantal">Aantal drankkaarten</label>
+              <input type="number" id="drankkaarten-aantal" min="1" max="500" placeholder="bv. 50">
+            </div>
+          </div>
+        </div>
+
+        <div class="extra-sectie">
+          <span class="extra-vraag">Muziek</span>
+          <div class="keuze-rij keuze-kolom">
+            <label><input type="radio" name="muziek" value="eigenDj"> Ik breng mijn eigen DJ mee (de DJ voorziet zelf alle materiaal)</label>
+            <label><input type="radio" name="muziek" value="spotify"> Ik breng mijn eigen Spotify-playlist mee</label>
+            <label><input type="radio" name="muziek" value="bar" checked> Ik laat de bar de muziek verzorgen</label>
+          </div>
+        </div>
+
+        <div class="extra-sectie">
+          <span class="extra-vraag">Springkasteel</span>
+          <div class="keuze-rij keuze-kolom">
+            <label><input type="radio" name="springkasteel" value="vzw"> Springkasteel van de vzw</label>
+            <label><input type="radio" name="springkasteel" value="eigenLeverancier"> Eigen leverancier — forfait € 15,00 voor stroom en kabels</label>
+            <label><input type="radio" name="springkasteel" value="geen" checked> Geen springkasteel</label>
+          </div>
+        </div>
+      </fieldset>
+
       <div class="prijs-info">
-        <strong>Reservatiekosten: € 60</strong><br>
+        <div id="prijs-regels"></div>
+        <strong>Totaal: <span id="prijs-totaal">€ 60</span></strong><br>
         Je betaalt dit bedrag meteen online (o.a. Bancontact) om de datum definitief
-        vast te leggen. Dit bedrag wordt <strong>niet terugbetaald</strong>, behalve
-        wanneer de organisatie zelf de reservering annuleert. De datum blijft
-        30 minuten voor jou gereserveerd terwijl je betaalt.
+        vast te leggen. De reservatiekosten van € 60 worden <strong>niet
+        terugbetaald</strong>, behalve wanneer de organisatie zelf de reservering
+        annuleert. De datum blijft 30 minuten voor jou gereserveerd terwijl je betaalt.
       </div>
 
       <label class="akkoord">
         <input type="checkbox" id="akkoord" required>
         <span>
-          Ik ga akkoord met de reservatiekosten van € 60 en begrijp dat deze niet
-          worden terugbetaald, behalve wanneer de organisatie zelf de reservering
-          annuleert — in dat geval wordt het volledige bedrag teruggestort. *
+          Ik ga akkoord met het totaalbedrag hierboven en begrijp dat de
+          reservatiekosten van € 60 niet worden terugbetaald, behalve wanneer de
+          organisatie zelf de reservering annuleert — in dat geval wordt het
+          volledige bedrag teruggestort. *
+        </span>
+      </label>
+
+      <label class="akkoord">
+        <input type="checkbox" id="akkoord-voorwaarden" required>
+        <span>
+          Ik heb de <a href="https://www.8-duust.be/algemene-voorwaarden"
+          target="_blank" rel="noopener">algemene voorwaarden</a> gelezen en
+          goedgekeurd. *
         </span>
       </label>
 

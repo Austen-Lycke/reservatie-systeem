@@ -7,7 +7,124 @@
 //   SITE_URL        – adres van de reserveringspagina, bijv. https://reserveren.8-duust.be
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const RESERVATIEKOSTEN = '60.00'; // euro — altijd hier bepaald, nooit door de browser
+// Prijzen in hele euro's — altijd hier bepaald, nooit door de browser.
+// (De kopie in app.js dient alleen voor de live weergave; wijzig prijzen
+// dus altijd op beide plekken.)
+const PRIJZEN = {
+  reservatiekosten: 60,
+  frietjesFrikandel: 7,   // per persoon
+  hamburgerFrietjes: 8,   // per persoon
+  pita: 6,                // per persoon
+  eigenFoodtruck: 25,     // forfait stroom/water/kabels/afval
+  drankkaartVooraf20: 20, // per kaart
+  drankkaartVooraf12: 12, // per kaart
+  springkasteelEigenLeverancier: 15 // forfait stroom/kabels
+};
+
+const MUZIEK_KEUZES = ['eigenDj', 'spotify', 'bar'];
+const SPRINGKASTEEL_KEUZES = ['vzw', 'eigenLeverancier', 'geen'];
+const DRANKKAART_KEUZES = ['vooraf20', 'vooraf12', 'terPlaatse', 'geen'];
+
+type Prijsregel = { label: string; bedrag: number };
+
+function geldigAantal(n: unknown): n is number {
+  return Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 500;
+}
+
+// Controleert de extra opties en berekent de prijsregels + het totaal.
+// Ontbrekende velden gelden als "nee"/"geen", zodat een oude (gecachte)
+// versie van het formulier zonder extra's gewoon blijft werken.
+function valideerExtras(ruw: unknown):
+  { fout: string } | { keuzes: Record<string, unknown>; prijsregels: Prijsregel[]; totaal: number } {
+  const extras = (ruw && typeof ruw === 'object' ? ruw : {}) as Record<string, unknown>;
+  const prijsregels: Prijsregel[] = [
+    { label: 'Reservatiekosten', bedrag: PRIJZEN.reservatiekosten }
+  ];
+
+  // Foodtruck van de vzw: aantal personen per gerecht.
+  const ft = (extras.foodtruckVzw && typeof extras.foodtruckVzw === 'object'
+    ? extras.foodtruckVzw : {}) as Record<string, unknown>;
+  const foodtruckGekozen = ft.gekozen === true;
+  const gerechten: [keyof typeof PRIJZEN, string, unknown][] = [
+    ['frietjesFrikandel', 'Frietjes met frikandel', ft.frietjesFrikandel],
+    ['hamburgerFrietjes', 'Hamburger met frietjes', ft.hamburgerFrietjes],
+    ['pita', 'Pita', ft.pita]
+  ];
+  const keuzesFoodtruck: Record<string, number> = {};
+  let gerechtenTotaalAantal = 0;
+  if (foodtruckGekozen) {
+    for (const [sleutel, label, waarde] of gerechten) {
+      const aantal = waarde === undefined || waarde === null || waarde === '' ? 0 : Number(waarde);
+      if (!geldigAantal(aantal)) return { fout: 'Ongeldige extra opties.' };
+      keuzesFoodtruck[sleutel] = aantal;
+      gerechtenTotaalAantal += aantal;
+      if (aantal > 0) {
+        prijsregels.push({
+          label: `${label} (${aantal} × € ${PRIJZEN[sleutel]})`,
+          bedrag: aantal * PRIJZEN[sleutel]
+        });
+      }
+    }
+    if (gerechtenTotaalAantal < 1) {
+      return { fout: 'Kies minstens één gerecht bij de foodtruck van de vzw, of zet die optie op "nee".' };
+    }
+  }
+
+  // Eigen foodtruck: vast forfait.
+  const eigenFoodtruck = extras.eigenFoodtruck === true;
+  if (eigenFoodtruck) {
+    prijsregels.push({
+      label: 'Eigen foodtruck (forfait stroom/water/kabels/afval)',
+      bedrag: PRIJZEN.eigenFoodtruck
+    });
+  }
+
+  const bbq = extras.bbq === true;
+
+  // Drankkaarten: vooraf (per kaart) of ter plaatse/geen.
+  const dk = (extras.drankkaarten && typeof extras.drankkaarten === 'object'
+    ? extras.drankkaarten : {}) as Record<string, unknown>;
+  const drankkaartKeuze = dk.keuze === undefined ? 'geen' : String(dk.keuze);
+  if (!DRANKKAART_KEUZES.includes(drankkaartKeuze)) return { fout: 'Ongeldige extra opties.' };
+  let drankkaartAantal = 0;
+  if (drankkaartKeuze === 'vooraf20' || drankkaartKeuze === 'vooraf12') {
+    drankkaartAantal = Number(dk.aantal);
+    if (!geldigAantal(drankkaartAantal) || drankkaartAantal < 1) {
+      return { fout: 'Vul een geldig aantal drankkaarten in (1 t/m 500).' };
+    }
+    const prijsPerKaart = drankkaartKeuze === 'vooraf20'
+      ? PRIJZEN.drankkaartVooraf20 : PRIJZEN.drankkaartVooraf12;
+    prijsregels.push({
+      label: `Drankkaarten (${drankkaartAantal} × € ${prijsPerKaart})`,
+      bedrag: drankkaartAantal * prijsPerKaart
+    });
+  }
+
+  const muziek = extras.muziek === undefined ? 'bar' : String(extras.muziek);
+  if (!MUZIEK_KEUZES.includes(muziek)) return { fout: 'Ongeldige extra opties.' };
+
+  const springkasteel = extras.springkasteel === undefined ? 'geen' : String(extras.springkasteel);
+  if (!SPRINGKASTEEL_KEUZES.includes(springkasteel)) return { fout: 'Ongeldige extra opties.' };
+  if (springkasteel === 'eigenLeverancier') {
+    prijsregels.push({
+      label: 'Springkasteel eigen leverancier (forfait stroom/kabels)',
+      bedrag: PRIJZEN.springkasteelEigenLeverancier
+    });
+  }
+
+  return {
+    keuzes: {
+      foodtruckVzw: foodtruckGekozen ? keuzesFoodtruck : false,
+      eigenFoodtruck,
+      bbq,
+      drankkaarten: { keuze: drankkaartKeuze, aantal: drankkaartAantal || undefined },
+      muziek,
+      springkasteel
+    },
+    prijsregels,
+    totaal: prijsregels.reduce((som, regel) => som + regel.bedrag, 0)
+  };
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,6 +167,14 @@ Deno.serve(async (req) => {
     return antwoord(400, { fout: 'Reserveren kan vanaf minimaal 25 personen (maximaal 500).' });
   }
 
+  // Extra opties controleren en het totaal berekenen vóór we de datum
+  // vastzetten: een ongeldige aanvraag mag de datum nooit blokkeren.
+  const extrasResultaat = valideerExtras(invoer.extras);
+  if ('fout' in extrasResultaat) {
+    return antwoord(400, { fout: extrasResultaat.fout });
+  }
+  const { keuzes, prijsregels, totaal } = extrasResultaat;
+
   const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
   // 1. Datum vastzetten (geel). De databasefunctie bewaakt alle spelregels
@@ -65,7 +190,9 @@ Deno.serve(async (req) => {
     p_eind_tijd: invoer.eindTijd,
     p_opbouw_minuten: invoer.opbouwMinuten,
     p_opbouw_vanaf: invoer.opbouwVanaf,
-    p_opmerkingen: invoer.opmerkingen
+    p_opmerkingen: invoer.opmerkingen,
+    p_extra_opties: { keuzes, prijsregels },
+    p_totaal_bedrag: totaal
   });
   if (reserveerFout) {
     const bericht = reserveerFout.message.includes('BEZET')
@@ -85,7 +212,8 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      amount: { currency: 'EUR', value: RESERVATIEKOSTEN },
+      // Hele euro's; toFixed(2) levert het formaat dat Mollie eist ("125.00").
+      amount: { currency: 'EUR', value: totaal.toFixed(2) },
       description: `Reservatie privéfeest ${datum}`,
       redirectUrl: terugUrl.toString(),
       webhookUrl: `${supabaseUrl}/functions/v1/mollie-webhook`,
