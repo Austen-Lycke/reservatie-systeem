@@ -1,11 +1,96 @@
 // Edge function "mollie-webhook": wordt door Mollie aangeroepen zodra de
 // status van een betaling verandert. Bevestigt de reservering (rood) bij
 // een geslaagde betaling, of geeft de datum weer vrij als de betaling is
-// afgebroken, mislukt of verlopen.
+// afgebroken, mislukt of verlopen. Na een geslaagde betaling gaat er ook
+// een e-mail met alle reservatiegegevens naar de organisatie.
 //
 // Belangrijk: deze functie moet bereikbaar zijn ZONDER Supabase-JWT
 // (verify_jwt = false), anders kan Mollie hem niet aanroepen.
+//
+// Extra secrets voor de e-mail (Edge Functions → Secrets):
+//   RESEND_API_KEY  – API-sleutel van https://resend.com (zonder deze sleutel
+//                     wordt er simpelweg geen mail gestuurd; de rest werkt gewoon)
+//   EMAIL_AFZENDER  – afzenderadres, bijv. "Reservaties <reservaties@8-duust.be>"
+//                     (het domein moet in Resend geverifieerd zijn; tijdens het
+//                     testen mag je dit weglaten: dan wordt onboarding@resend.dev
+//                     gebruikt)
 import { createClient } from 'npm:@supabase/supabase-js@2';
+
+const EMAIL_ONTVANGER = 'info@8-duust.be';
+
+// Waarden netjes tonen in de mail; lege velden worden een streepje.
+function toon(waarde: unknown): string {
+  const tekst = String(waarde ?? '').trim();
+  return tekst === '' ? '—' : tekst
+    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+// Stuurt de bevestigingsmail naar de organisatie. Mag nooit de webhook laten
+// falen: bij problemen loggen we alleen (de reservering is dan al bevestigd).
+async function stuurBevestigingsmail(
+  details: Record<string, unknown>,
+  datum: string,
+  betalingId: string
+): Promise<void> {
+  const resendSleutel = Deno.env.get('RESEND_API_KEY');
+  if (!resendSleutel) {
+    console.error('RESEND_API_KEY ontbreekt: geen bevestigingsmail gestuurd voor', datum);
+    return;
+  }
+  const afzender = Deno.env.get('EMAIL_AFZENDER') ?? 'Reservaties <onboarding@resend.dev>';
+
+  const datumMooi = new Date(`${datum}T12:00:00`).toLocaleDateString('nl-BE', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+  const opbouwMinuten = Number(details.opbouw_minuten ?? 0);
+  const opbouw = opbouwMinuten > 0
+    ? `${opbouwMinuten} minuten vooraf${details.opbouw_vanaf ? ` (vanaf ${toon(details.opbouw_vanaf)})` : ''}`
+    : 'geen';
+
+  const rijen: [string, string][] = [
+    ['Datum', `${datumMooi}`],
+    ['Naam', toon(details.naam)],
+    ['E-mail', toon(details.email)],
+    ['Telefoon', toon(details.telefoon)],
+    ['Type feest', toon(details.type_feest)],
+    ['Aantal personen', toon(details.aantal_personen)],
+    ['Uren', `${toon(details.start_tijd)} – ${toon(details.eind_tijd)}`],
+    ['Opbouw', opbouw],
+    ['Opmerkingen', toon(details.opmerkingen)],
+    ['Mollie-betaling', toon(betalingId)]
+  ];
+
+  const tabel = rijen.map(([label, waarde]) =>
+    `<tr><td style="padding:6px 16px 6px 0;color:#555;white-space:nowrap;vertical-align:top">${label}</td>` +
+    `<td style="padding:6px 0"><strong>${waarde}</strong></td></tr>`
+  ).join('');
+
+  const antwoord = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${resendSleutel}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: afzender,
+      to: [EMAIL_ONTVANGER],
+      reply_to: String(details.email ?? '') || undefined,
+      subject: `Nieuwe reservatie: ${datumMooi} — ${toon(details.naam)}`,
+      html:
+        `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#222">` +
+        `<h2 style="margin:0 0 4px">Nieuwe reservatie bevestigd ✅</h2>` +
+        `<p style="margin:0 0 16px">De betaling van de reservatiekosten is geslaagd. Alle gegevens:</p>` +
+        `<table style="border-collapse:collapse">${tabel}</table>` +
+        `<p style="margin:16px 0 0;color:#777;font-size:13px">Deze mail is automatisch verstuurd door het reserveringssysteem.</p>` +
+        `</div>`
+    })
+  });
+
+  if (!antwoord.ok) {
+    console.error('Bevestigingsmail versturen mislukt:', antwoord.status,
+      await antwoord.text().catch(() => '?'));
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('ok');
@@ -50,7 +135,7 @@ Deno.serve(async (req) => {
     // wachttijd van 30 minuten betaalde én iemand anders de datum intussen
     // opnieuw boekte, hoort het geld terug naar de trage betaler.
     const { data: details } = await admin.from('reservering_details')
-      .select('mollie_betaling_id')
+      .select('*')
       .eq('datum', datum)
       .maybeSingle();
 
@@ -74,10 +159,18 @@ Deno.serve(async (req) => {
       return new Response('ok');
     }
 
-    await admin.from('reserveringen')
+    const { data: bevestigd } = await admin.from('reserveringen')
       .update({ status: 'betaald', verloopt_op: null })
       .eq('datum', datum)
-      .eq('status', 'in_afwachting');
+      .eq('status', 'in_afwachting')
+      .select('datum');
+
+    // Alleen mailen als de reservering nú écht bevestigd werd. Mollie kan
+    // dezelfde webhook meerdere keren aanroepen; bij een herhaling was de
+    // status al 'betaald' en is er dus al gemaild.
+    if (bevestigd && bevestigd.length > 0) {
+      await stuurBevestigingsmail(details, datum, betalingId);
+    }
   } else if (['expired', 'canceled', 'failed'].includes(betaling.status)) {
     // Betaling gaat definitief niet door: datum weer vrijgeven (groen).
     await admin.from('reserveringen')

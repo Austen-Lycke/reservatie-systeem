@@ -81,6 +81,38 @@ nooit in de browser of in GitHub terechtkomt.
    goedkeuren voordat live betalen werkt (de site moet tonen wat je verkoopt,
    met prijs, voorwaarden en contactgegevens).
 
+## Live gaan — deel 3: e-mail bij elke bevestigde reservatie
+
+Zodra een betaling slaagt, stuurt het systeem automatisch een e-mail naar
+**info@8-duust.be** met alle reservatiegegevens (naam, datum, type feest, uren,
+aantal personen, opbouwtijd, opmerkingen, contactgegevens en het
+Mollie-betalingsnummer). Antwoorden op die mail gaat rechtstreeks naar de boeker
+(het e-mailadres van de klant staat als reply-to ingesteld).
+
+Hiervoor wordt [Resend](https://resend.com) gebruikt (gratis tot 3.000 mails
+per maand — ruim voldoende):
+
+10. Maak een gratis account aan op https://resend.com — **gebruik daarbij
+    info@8-duust.be als accountadres**. Zolang je geen eigen domein verifieert,
+    mag Resend namelijk alleen mailen naar het adres van je eigen account —
+    en dat is precies waar de mails naartoe moeten.
+11. Maak in Resend een **API key** aan (API Keys → Create API Key) en voeg die
+    in Supabase toe als secret: **Edge Functions → Secrets** →
+    `RESEND_API_KEY` = `re_...`
+12. Maak een testreservering met de Mollie-testsleutel en kies "betaling
+    geslaagd" — binnen enkele seconden valt de mail binnen op info@8-duust.be.
+    Komt er niets aan? Kijk in Supabase onder **Edge Functions →
+    mollie-webhook → Logs**.
+13. *(Optioneel, maar netter)*: verifieer het domein `8-duust.be` in Resend
+    (**Domains → Add Domain**; je krijgt een paar DNS-records om bij je
+    domeinbeheerder toe te voegen). Voeg daarna in Supabase het secret
+    `EMAIL_AFZENDER` toe, bijv. `Reservaties <reservaties@8-duust.be>`.
+    De mails komen dan van je eigen domein in plaats van `onboarding@resend.dev`
+    en belanden minder snel in spam.
+
+Zonder `RESEND_API_KEY` blijft alles gewoon werken — er wordt dan alleen geen
+mail gestuurd (dit staat dan als melding in de logs van de webhook).
+
 ### Beheer
 
 - **Reserveringen bekijken**: Supabase → **Table Editor** → `reservering_details`
@@ -116,7 +148,7 @@ die naar deze pagina linkt. Mooiste resultaat: een subdomein zoals
 | `supabase-config.js` | Hier plak je jouw Supabase-URL en anon-sleutel |
 | `supabase/migrations/` | Databaseschema + beveiligingsregels (automatisch toegepast via GitHub) |
 | `supabase/functions/reserveer/` | Edge function: datum vastzetten + Mollie-betaling starten |
-| `supabase/functions/mollie-webhook/` | Edge function: betaling bevestigen of datum vrijgeven |
+| `supabase/functions/mollie-webhook/` | Edge function: betaling bevestigen of datum vrijgeven + e-mail naar info@8-duust.be |
 | `supabase/config.toml` | Functie-instellingen voor de Supabase CLI |
 
 ## Hoe het betalen werkt (en waarom het veilig is)
