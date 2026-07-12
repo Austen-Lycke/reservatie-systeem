@@ -39,6 +39,50 @@ function minutenNaarTijd(totaal) {
   return `${uur}:${min}`;
 }
 
+// Vult de starttijd-dropdown met kwartieren (00:00 t/m 23:45).
+function vulStartTijden() {
+  const select = document.getElementById('start-tijd');
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.disabled = true;
+  placeholder.defaultSelected = true;
+  placeholder.textContent = 'Kies een tijd';
+  select.appendChild(placeholder);
+  for (let m = 0; m < 24 * 60; m += 15) {
+    const optie = document.createElement('option');
+    optie.value = optie.textContent = minutenNaarTijd(m);
+    select.appendChild(optie);
+  }
+}
+
+// Vult de eindtijd-dropdown: van een kwartier na de starttijd tot en met
+// uiterlijk 02:00 's nachts (over middernacht heen).
+function werkEindTijdenBij() {
+  const start = document.getElementById('start-tijd').value;
+  const select = document.getElementById('eind-tijd');
+  const huidig = select.value;
+  select.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.disabled = true;
+  placeholder.defaultSelected = true;
+  placeholder.selected = true;
+  placeholder.textContent = start ? 'Kies een tijd' : 'Kies eerst een starttijd';
+  select.appendChild(placeholder);
+  select.disabled = !start;
+  if (!start) return;
+  const tot = 24 * 60 + tijdNaarMinuten(MAX_EINDTIJD);
+  for (let m = tijdNaarMinuten(start) + 15; m <= tot; m += 15) {
+    const optie = document.createElement('option');
+    optie.value = optie.textContent = minutenNaarTijd(m);
+    select.appendChild(optie);
+  }
+  // Behoud de eerder gekozen eindtijd als die nog steeds geldig is;
+  // anders valt de selectie terug op de placeholder.
+  if (huidig) select.value = huidig;
+  if (select.value !== huidig) select.value = '';
+}
+
 // Eindtijd is geldig als hij ná de starttijd valt (zelfde dag),
 // of uiterlijk 02:00 's nachts (over middernacht heen).
 function valideerTijden(start, eind) {
@@ -50,6 +94,50 @@ function valideerTijden(start, eind) {
     return 'De eindtijd moet na de starttijd liggen. Loopt het feest door tot na middernacht, kies dan een eindtijd van uiterlijk 02:00.';
   }
   return null;
+}
+
+// ---------- Telefoonnummer automatisch formatteren ----------
+
+// Groepering per nummertype: gsm 0470 12 34 56, vaste lijn met korte zone
+// 02 123 45 67, vaste lijn met lange zone 011 22 33 44.
+function telefoonGroepen(cijfers) {
+  if (/^0(2|3|9|4[23])/.test(cijfers)) return [2, 3, 2, 2];
+  if (/^04/.test(cijfers) || cijfers.length <= 2) return [4, 2, 2, 2];
+  return [3, 2, 2, 2];
+}
+
+function formateerTelefoon(ruw) {
+  // +32 of 0032 aan het begin wordt een gewone 0.
+  const genormaliseerd = ruw.replace(/^\s*(\+|00)32\s*/, '0');
+  // Ander buitenlands nummer: niet aanpassen.
+  if (genormaliseerd.trim().startsWith('+')) return ruw;
+  let cijfers = genormaliseerd.replace(/\D/g, '');
+  const groepen = telefoonGroepen(cijfers);
+  cijfers = cijfers.slice(0, groepen.reduce((a, b) => a + b, 0));
+  const delen = [];
+  let i = 0;
+  for (const lengte of groepen) {
+    if (i >= cijfers.length) break;
+    delen.push(cijfers.slice(i, i + lengte));
+    i += lengte;
+  }
+  return delen.join(' ');
+}
+
+function koppelTelefoonFormattering() {
+  const veld = document.getElementById('telefoon');
+  veld.addEventListener('input', () => {
+    const cijfersVoorCaret = veld.value.slice(0, veld.selectionStart).replace(/\D/g, '').length;
+    const nieuw = formateerTelefoon(veld.value);
+    if (nieuw === veld.value) return;
+    veld.value = nieuw;
+    // Zet de cursor terug na hetzelfde aantal cijfers als vóór het formatteren.
+    let positie = 0;
+    for (let geteld = 0; positie < nieuw.length && geteld < cijfersVoorCaret; positie++) {
+      if (/\d/.test(nieuw[positie])) geteld++;
+    }
+    veld.setSelectionRange(positie, positie);
+  });
 }
 
 // ---------- Opslag: demo (localStorage) of Supabase ----------
@@ -288,6 +376,7 @@ function openDialoog(datumStr) {
   document.getElementById('dialoog-datum').textContent = datumMooi(datumStr);
   formulierEl.reset();
   verbergFormulierFout();
+  werkEindTijdenBij();
   werkOpbouwHintBij();
   startTypeFeestAnimatie();
   dialoogEl.showModal();
@@ -348,6 +437,10 @@ async function verwerkFormulier(event) {
   const opbouwMinuten = Number(document.getElementById('opbouw').value);
   const opmerkingen = document.getElementById('opmerkingen').value.trim();
 
+  if (!(aantalPersonen >= 25)) {
+    toonFormulierFout('Reserveren kan vanaf minimaal 25 personen.');
+    return;
+  }
   const tijdFout = valideerTijden(startTijd, eindTijd);
   if (tijdFout) {
     toonFormulierFout(tijdFout);
@@ -429,13 +522,18 @@ function koppelGebeurtenissen() {
   // Vangt ook sluiten via Esc af, niet alleen via de annuleerknop.
   dialoogEl.addEventListener('close', stopTypeFeestAnimatie);
   formulierEl.addEventListener('submit', verwerkFormulier);
-  document.getElementById('start-tijd').addEventListener('input', werkOpbouwHintBij);
+  document.getElementById('start-tijd').addEventListener('change', () => {
+    werkEindTijdenBij();
+    werkOpbouwHintBij();
+  });
   document.getElementById('opbouw').addEventListener('change', werkOpbouwHintBij);
+  koppelTelefoonFormattering();
 }
 
 async function start() {
   const nu = new Date();
   getoondeMaand = new Date(nu.getFullYear(), nu.getMonth(), 1);
+  vulStartTijden();
   koppelGebeurtenissen();
   renderKalender();
 

@@ -45,6 +45,11 @@ Deno.serve(async (req) => {
     return antwoord(400, { fout: 'Ongeldige datum.' });
   }
 
+  const aantalPersonen = Number(invoer.aantalPersonen);
+  if (!Number.isInteger(aantalPersonen) || aantalPersonen < 25 || aantalPersonen > 500) {
+    return antwoord(400, { fout: 'Reserveren kan vanaf minimaal 25 personen (maximaal 500).' });
+  }
+
   const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
   // 1. Datum vastzetten (geel). De databasefunctie bewaakt alle spelregels
