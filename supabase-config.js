@@ -5,6 +5,6 @@
 // Zolang onderstaande waarden niet zijn ingevuld, draait de app in DEMO-MODUS:
 // reserveringen worden dan alleen lokaal in deze browser opgeslagen.
 export const supabaseConfig = {
-  url: "PLAK_HIER_JE_PROJECT_URL",        // bijv. https://abcdefgh.supabase.co
-  anonKey: "PLAK_HIER_JE_ANON_PUBLIC_KEY" // de lange "anon public" sleutel
+  url: "https://mbvvqdvsspersyjzuyqi.supabase.co",
+  anonKey: "sb_publishable_F5EWja5tNe14P71P9ac8IA_dFCVDpdY"
 };
