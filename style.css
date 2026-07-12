@@ -45,6 +45,28 @@ header h1 { margin-bottom: 0.25rem; }
 }
 .kalender-kop button:disabled { opacity: 0.4; cursor: default; }
 
+.bezoek-sectie {
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+.bezoek-sectie h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+.bezoek-sectie p { color: #555; }
+.bezoek-telefoon {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.bezoek-telefoon a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+.bezoek-telefoon a:hover { text-decoration: underline; }
+
 .legenda {
   display: flex;
   gap: 1.25rem;
