@@ -39,41 +39,38 @@ Open daarna http://localhost:4173 in je browser.
 
 ---
 
-## Live gaan — deel 1: Supabase (database + realtime)
+## Live gaan — deel 1: Supabase koppelen aan GitHub
 
 1. Ga naar https://supabase.com en maak een account aan.
 2. Klik **New project**, kies een naam en een regio in Europa (bijv. *West EU*).
-3. Open de **SQL Editor**, klik **New query**, plak de volledige inhoud van
-   [`supabase.sql`](supabase.sql) en klik **Run**.
-   *(Had je de eerdere versie zonder betalingen al draaien? Gebruik dan
-   [`supabase-update-betalingen.sql`](supabase-update-betalingen.sql).)*
-4. Ga naar **Project Settings → API** en kopieer de **Project URL** en de
+3. Koppel deze GitHub-repository: **Project Settings → Integrations → GitHub →
+   Connect**. Kies de repo, laat *Working directory* op `.` staan, zet
+   *Deploy to production* aan met branch `main`, en klik **Enable integration**.
+   Vanaf nu voert Supabase bij elke push naar `main` automatisch uit:
+   - het databaseschema uit [`supabase/migrations/`](supabase/migrations/)
+     (tabellen, beveiligingsregels, reserveringsfunctie, realtime);
+   - de twee edge functions uit [`supabase/functions/`](supabase/functions/).
+4. Controleer na de eerste deploy onder **Edge Functions** dat `reserveer` en
+   `mollie-webhook` bestaan en dat bij beide **Verify JWT** UIT staat (dat hoort
+   automatisch te volgen uit `supabase/config.toml`; zet het anders handmatig uit,
+   anders kan Mollie de webhook niet bereiken).
+   *(Geen zin in de GitHub-koppeling? Alles kan ook handmatig: plak de inhoud
+   van het migratiebestand in de SQL Editor en maak de functies aan via
+   Edge Functions → Deploy a new function.)*
+5. Ga naar **Project Settings → API** en kopieer de **Project URL** en de
    **anon public**-sleutel naar [`supabase-config.js`](supabase-config.js).
 
 ## Live gaan — deel 2: Mollie (betalingen)
 
-De betaallogica draait als twee "edge functions" binnen je Supabase-project,
-zodat de geheime Mollie-sleutel nooit in de browser terechtkomt.
+De betaallogica draait in de edge functions, zodat de geheime Mollie-sleutel
+nooit in de browser of in GitHub terechtkomt.
 
-5. Haal de API-sleutels op uit het Mollie-dashboard (https://my.mollie.com):
+6. Haal de API-sleutels op uit het Mollie-dashboard (https://my.mollie.com):
    **Developers → API keys**. Begin met de **Test API key** (`test_...`).
-6. Zet in Supabase de geheimen klaar: **Edge Functions → Secrets** (of via CLI),
-   en voeg toe:
+7. Zet in Supabase de geheimen klaar: **Edge Functions → Secrets**, en voeg toe:
    - `MOLLIE_API_KEY` = je Mollie-sleutel (eerst `test_...`, later `live_...`)
    - `SITE_URL` = het adres van deze reserveringspagina
      (tijdens het testen: `http://localhost:4173`; live: het echte adres)
-7. Deploy de twee functies uit de map `supabase/functions/`:
-   - **Met de Supabase CLI** (aanrader, vanuit deze map):
-     ```bash
-     npx supabase login
-     npx supabase link --project-ref <jouw-project-ref>
-     npx supabase functions deploy reserveer mollie-webhook
-     ```
-     De instelling dat de webhook zonder Supabase-sleutel bereikbaar moet zijn
-     staat al klaar in `supabase/config.toml`.
-   - **Of via het dashboard**: Edge Functions → Deploy a new function → maak
-     `reserveer` en `mollie-webhook` aan en plak de inhoud van de bijbehorende
-     `index.ts`-bestanden. Zet bij **beide** functies de optie **Verify JWT uit**.
 8. Herlaad de reserveringspagina en maak een testreservering. Met de testsleutel
    opent Mollie een oefen-betaalpagina waar je zelf kiest of de betaling "slaagt"
    of "mislukt" — er wordt niets echt afgeschreven. Controleer:
@@ -117,8 +114,7 @@ die naar deze pagina linkt. Mooiste resultaat: een subdomein zoals
 | `app.js` | Kalender, validatie, realtime, betaalflow |
 | `style.css` | Basisopmaak (bewust simpel gehouden) |
 | `supabase-config.js` | Hier plak je jouw Supabase-URL en anon-sleutel |
-| `supabase.sql` | Databaseschema + beveiligingsregels (nieuw project) |
-| `supabase-update-betalingen.sql` | Upgrade-script voor wie de eerste versie al draaide |
+| `supabase/migrations/` | Databaseschema + beveiligingsregels (automatisch toegepast via GitHub) |
 | `supabase/functions/reserveer/` | Edge function: datum vastzetten + Mollie-betaling starten |
 | `supabase/functions/mollie-webhook/` | Edge function: betaling bevestigen of datum vrijgeven |
 | `supabase/config.toml` | Functie-instellingen voor de Supabase CLI |

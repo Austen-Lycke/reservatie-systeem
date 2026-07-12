@@ -1,16 +1,18 @@
--- Databaseschema voor het reserveringssysteem (versie 2, met Mollie-betaling).
--- Plak dit bij een NIEUW Supabase-project in: SQL Editor → New query → Run.
--- (Had je de eerdere versie al uitgevoerd? Gebruik dan supabase-update-betalingen.sql.)
+-- Reserveringssysteem privéfeesten: volledige databaseopzet.
+-- Wordt automatisch uitgevoerd door de Supabase GitHub-integratie.
+-- Alles hieronder is her-uitvoerbaar: het script werkt zowel op een lege
+-- database als op een project waar een eerdere versie al handmatig draaide.
 --
 -- Opzet:
--- - "reserveringen": publiek zichtbaar, bevat alleen datum + status (geen persoonsgegevens).
---   De datum is de primaire sleutel, dus dubbele boekingen zijn op databaseniveau onmogelijk.
---   status = 'in_afwachting' (geel: betaling gestart, vervalt na 30 min) of 'betaald' (rood).
+-- - "reserveringen": publiek zichtbaar, bevat alleen datum + status (geen
+--   persoonsgegevens). De datum is de primaire sleutel, dus dubbele boekingen
+--   zijn op databaseniveau onmogelijk. status = 'in_afwachting' (geel:
+--   betaling gestart, vervalt na 30 min) of 'betaald' (rood).
 -- - "reservering_details": contactgegevens van de boeker. NIET publiek leesbaar.
 -- - "maak_reservering": zet een datum 30 minuten vast terwijl de klant betaalt.
 --   Alleen aanroepbaar door de server (edge functions), niet door bezoekers.
 
-create table public.reserveringen (
+create table if not exists public.reserveringen (
   datum date primary key,
   status text not null default 'in_afwachting'
     check (status in ('in_afwachting', 'betaald')),
@@ -18,7 +20,7 @@ create table public.reserveringen (
   aangemaakt_op timestamptz not null default now()
 );
 
-create table public.reservering_details (
+create table if not exists public.reservering_details (
   datum date primary key references public.reserveringen (datum) on delete cascade,
   naam text not null,
   email text not null,
@@ -33,10 +35,21 @@ create table public.reservering_details (
   aangemaakt_op timestamptz not null default now()
 );
 
+-- Upgrade vanaf de eerste versie (zonder betalingen): ontbrekende kolommen
+-- toevoegen. Bestaande reserveringen golden toen als definitief ('betaald').
+alter table public.reserveringen
+  add column if not exists status text not null default 'betaald'
+    check (status in ('in_afwachting', 'betaald')),
+  add column if not exists verloopt_op timestamptz;
+
+alter table public.reservering_details
+  add column if not exists mollie_betaling_id text;
+
 -- Row Level Security: bezoekers (anon) mogen alleen zien welke dagen bezet zijn.
 alter table public.reserveringen enable row level security;
 alter table public.reservering_details enable row level security;
 
+drop policy if exists "Iedereen mag bezette dagen zien" on public.reserveringen;
 create policy "Iedereen mag bezette dagen zien"
   on public.reserveringen
   for select
@@ -116,4 +129,14 @@ grant execute on function public.maak_reservering(date, text, text, text, int, t
 
 -- Realtime aanzetten voor de kalender: elke wijziging in "reserveringen"
 -- wordt direct naar alle open browsers gestuurd.
-alter publication supabase_realtime add table public.reserveringen;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'reserveringen'
+  ) then
+    alter publication supabase_realtime add table public.reserveringen;
+  end if;
+end $$;
