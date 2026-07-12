@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reserveringen – Privéfeesten</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Reserveer jouw privéfeest</h1>
+    <p class="intro">
+      Kies een beschikbare (groene) dag in de kalender om te reserveren.
+      Er is maximaal één feest per dag mogelijk.
+    </p>
+  </header>
+
+  <div id="modus-banner" class="banner verborgen"></div>
+  <div id="fout-banner" class="banner banner-fout verborgen"></div>
+
+  <main>
+    <section class="kalender-sectie">
+      <div class="kalender-kop">
+        <button id="vorige-maand" type="button" aria-label="Vorige maand">‹</button>
+        <h2 id="maand-titel"></h2>
+        <button id="volgende-maand" type="button" aria-label="Volgende maand">›</button>
+      </div>
+
+      <div class="legenda">
+        <span><span class="legenda-blok beschikbaar"></span> Beschikbaar</span>
+        <span><span class="legenda-blok bezet"></span> Bezet</span>
+        <span><span class="legenda-blok in-afwachting"></span> Betaling in behandeling</span>
+        <span><span class="legenda-blok niet-beschikbaar"></span> Niet beschikbaar</span>
+      </div>
+
+      <div class="weekdagen">
+        <div>ma</div><div>di</div><div>wo</div><div>do</div><div>vr</div><div>za</div><div>zo</div>
+      </div>
+      <div id="kalender" class="kalender"></div>
+      <p id="live-status" class="live-status"></p>
+    </section>
+  </main>
+
+  <dialog id="reserveer-dialoog">
+    <form id="reserveer-formulier" method="dialog">
+      <h3>Reservering voor <span id="dialoog-datum"></span></h3>
+
+      <label for="naam">Naam *</label>
+      <input type="text" id="naam" name="naam" required maxlength="100">
+
+      <label for="email">E-mailadres *</label>
+      <input type="email" id="email" name="email" required maxlength="200">
+
+      <label for="telefoon">Telefoonnummer *</label>
+      <input type="tel" id="telefoon" name="telefoon" required maxlength="30">
+
+      <label for="aantal-personen">Aantal personen *</label>
+      <input type="number" id="aantal-personen" name="aantalPersonen" min="1" max="500" required>
+
+      <div class="tijden">
+        <div>
+          <label for="start-tijd">Starttijd feest *</label>
+          <input type="time" id="start-tijd" name="startTijd" step="900" required>
+        </div>
+        <div>
+          <label for="eind-tijd">Eindtijd feest *</label>
+          <input type="time" id="eind-tijd" name="eindTijd" step="900" required>
+          <small>Uiterlijk 02:00 &rsquo;s nachts</small>
+        </div>
+      </div>
+
+      <label for="opbouw">Hoe vroeg wil je komen om in te richten?</label>
+      <select id="opbouw" name="opbouwMinuten">
+        <option value="0">Niet eerder (vanaf de starttijd)</option>
+        <option value="30">30 minuten eerder</option>
+        <option value="60">1 uur eerder</option>
+        <option value="90" selected>1,5 uur eerder (maximum)</option>
+      </select>
+      <small id="opbouw-hint"></small>
+
+      <label for="opmerkingen">Opmerkingen (optioneel)</label>
+      <textarea id="opmerkingen" name="opmerkingen" rows="3" maxlength="1000"></textarea>
+
+      <div class="prijs-info">
+        <strong>Reservatiekosten: € 60</strong><br>
+        Je betaalt dit bedrag meteen online (o.a. Bancontact) om de datum definitief
+        vast te leggen. Dit bedrag wordt <strong>niet terugbetaald</strong>, behalve
+        wanneer de organisatie zelf de reservering annuleert. De datum blijft
+        30 minuten voor jou gereserveerd terwijl je betaalt.
+      </div>
+
+      <label class="akkoord">
+        <input type="checkbox" id="akkoord" required>
+        <span>
+          Ik ga akkoord met de reservatiekosten van € 60 en begrijp dat deze niet
+          worden terugbetaald, behalve wanneer de organisatie zelf de reservering
+          annuleert — in dat geval wordt het volledige bedrag teruggestort. *
+        </span>
+      </label>
+
+      <p id="formulier-fout" class="formulier-fout verborgen"></p>
+
+      <div class="dialoog-knoppen">
+        <button type="button" id="annuleer-knop">Annuleren</button>
+        <button type="submit" id="bevestig-knop" class="primair">Reserveren en € 60 betalen</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast verborgen"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

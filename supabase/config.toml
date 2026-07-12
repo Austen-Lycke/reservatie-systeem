@@ -1,0 +1,12 @@
+# Instellingen voor de edge functions (gebruikt door de Supabase CLI).
+# Deploy je via het dashboard? Zet dan bij beide functies de optie
+# "Verify JWT" UIT — dat is hetzelfde als onderstaande instelling.
+
+# Mollie roept de webhook aan zonder Supabase-sleutel.
+[functions.mollie-webhook]
+verify_jwt = false
+
+# De reserveerfunctie doet zijn eigen validatie; zo werkt hij ook met
+# projecten die de nieuwe (niet-JWT) publishable keys gebruiken.
+[functions.reserveer]
+verify_jwt = false

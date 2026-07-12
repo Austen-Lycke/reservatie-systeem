@@ -1,0 +1,214 @@
+/* Functionele basisstijl — bewust simpel gehouden, opmaak komt later. */
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0 auto;
+  padding: 1rem;
+  max-width: 640px;
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+header h1 { margin-bottom: 0.25rem; }
+.intro { color: #555; margin-top: 0; }
+
+.banner {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  background: #fff3cd;
+  border: 1px solid #ffe08a;
+  margin-bottom: 1rem;
+}
+.banner-fout { background: #f8d7da; border-color: #f1aeb5; }
+.verborgen { display: none; }
+
+.kalender-kop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.kalender-kop h2 {
+  margin: 0;
+  text-transform: capitalize;
+}
+.kalender-kop button {
+  font-size: 1.4rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.kalender-kop button:disabled { opacity: 0.4; cursor: default; }
+
+.legenda {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+.legenda-blok {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 3px;
+  vertical-align: -2px;
+  margin-right: 0.3rem;
+}
+
+.weekdagen, .kalender {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.weekdagen div {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #777;
+  padding-bottom: 0.25rem;
+}
+
+.dag {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 600;
+}
+.dag.leeg { visibility: hidden; }
+.dag.beschikbaar,
+.legenda-blok.beschikbaar {
+  background: #2e9e4f;
+  color: #fff;
+  cursor: pointer;
+}
+.dag.beschikbaar:hover, .dag.beschikbaar:focus-visible {
+  background: #23803e;
+  outline: 2px solid #1a5c2d;
+}
+.dag.bezet,
+.legenda-blok.bezet {
+  background: #d0342c;
+  color: #fff;
+  cursor: not-allowed;
+}
+.dag.in-afwachting,
+.legenda-blok.in-afwachting {
+  background: #f0b429;
+  color: #4a3403;
+  cursor: not-allowed;
+}
+.dag.niet-beschikbaar,
+.legenda-blok.niet-beschikbaar {
+  background: #e2e2e2;
+  color: #999;
+}
+.dag.vandaag { box-shadow: inset 0 0 0 2px #1a1a1a; }
+
+.live-status {
+  font-size: 0.8rem;
+  color: #888;
+  text-align: right;
+}
+
+/* Reserveringsformulier */
+dialog {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  padding: 1.5rem;
+  width: min(92vw, 460px);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
+
+dialog h3 { margin-top: 0; }
+
+dialog label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0.9rem 0 0.25rem;
+}
+dialog input, dialog select, dialog textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font: inherit;
+}
+dialog small { color: #666; display: block; margin-top: 0.2rem; }
+
+.tijden {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.akkoord {
+  display: flex !important;
+  gap: 0.5rem;
+  font-weight: 400 !important;
+  align-items: flex-start;
+  margin-top: 1.2rem !important;
+}
+.akkoord input { width: auto; margin-top: 0.2rem; }
+
+.prijs-info {
+  background: #eef6f0;
+  border: 1px solid #bcd9c4;
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.9rem;
+  margin-top: 1.2rem;
+}
+
+.formulier-fout {
+  background: #f8d7da;
+  border: 1px solid #f1aeb5;
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.dialoog-knoppen {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.dialoog-knoppen button {
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.dialoog-knoppen button.primair {
+  background: #2e9e4f;
+  border-color: #2e9e4f;
+  color: #fff;
+  font-weight: 600;
+}
+.dialoog-knoppen button:disabled { opacity: 0.6; cursor: default; }
+
+.toast {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: #fff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+}
