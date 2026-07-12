@@ -10,3 +10,8 @@ verify_jwt = false
 # projecten die de nieuwe (niet-JWT) publishable keys gebruiken.
 [functions.reserveer]
 verify_jwt = false
+
+# Agenda-apps halen de feed op zonder Supabase-sleutel; het geheime
+# token in de URL bewaakt de toegang.
+[functions.kalender-feed]
+verify_jwt = false

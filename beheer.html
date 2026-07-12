@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Beheer – 8-duust reservaties</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Beheer – reservaties</h1>
+    <p class="intro">
+      Overzicht van alle betaalde reserveringen, alleen voor de organisatie.
+    </p>
+  </header>
+
+  <div id="fout-banner" class="banner banner-fout verborgen"></div>
+
+  <main>
+    <!-- Inloggen: e-mailadres invullen, inloglink ontvangen, klaar. -->
+    <section id="login-sectie" class="bezoek-sectie">
+      <h2>Inloggen</h2>
+      <p>
+        Vul je e-mailadres in en je ontvangt een inloglink. Alleen de
+        e-mailadressen van de organisatie hebben toegang.
+      </p>
+      <form id="login-formulier" class="login-formulier">
+        <label for="login-email">E-mailadres</label>
+        <input type="email" id="login-email" required maxlength="200"
+               placeholder="bv. info@8-duust.be" autocomplete="email">
+        <button type="submit" id="login-knop" class="primair">Stuur inloglink</button>
+      </form>
+      <p id="login-status" class="verborgen"></p>
+    </section>
+
+    <!-- Portaal: pas zichtbaar na inloggen. -->
+    <section id="portaal-sectie" class="verborgen">
+      <div class="beheer-balk">
+        <span id="ingelogd-als"></span>
+        <button type="button" id="uitlog-knop">Uitloggen</button>
+      </div>
+
+      <div id="portaal-inhoud">
+      <section class="kalender-sectie">
+        <div class="kalender-kop">
+          <button id="vorige-maand" type="button" aria-label="Vorige maand">‹</button>
+          <h2 id="maand-titel"></h2>
+          <button id="volgende-maand" type="button" aria-label="Volgende maand">›</button>
+        </div>
+
+        <div class="legenda">
+          <span><span class="legenda-blok bezet"></span> Bezet – klik voor details</span>
+        </div>
+
+        <div class="weekdagen">
+          <div>ma</div><div>di</div><div>wo</div><div>do</div><div>vr</div><div>za</div><div>zo</div>
+        </div>
+        <div id="kalender" class="kalender"></div>
+      </section>
+
+      <section id="detail-paneel" class="bezoek-sectie verborgen" aria-live="polite">
+        <h2 id="detail-titel"></h2>
+        <dl id="detail-lijst" class="detail-lijst"></dl>
+      </section>
+
+      <section class="bezoek-sectie">
+        <h2>Komende reservaties</h2>
+        <ul id="komende-lijst" class="komende-lijst"></ul>
+        <p id="komende-leeg" class="verborgen">Er zijn geen komende reservaties.</p>
+      </section>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="beheer.js"></script>
+</body>
+</html>
