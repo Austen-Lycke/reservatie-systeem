@@ -4,6 +4,7 @@ const MAANDEN = [
   'januari', 'februari', 'maart', 'april', 'mei', 'juni',
   'juli', 'augustus', 'september', 'oktober', 'november', 'december'
 ];
+const MIN_STARTTIJD = '10:00'; // reserveren kan ten vroegste vanaf 10:00
 const MAX_EINDTIJD = '02:00'; // uiterlijk 02:00 's nachts (na middernacht)
 const TYPE_FEEST_VOORBEELDEN = [
   'lentefeest', 'communie', 'verjaardag', 'pensioenviering',
@@ -39,7 +40,7 @@ function minutenNaarTijd(totaal) {
   return `${uur}:${min}`;
 }
 
-// Vult de starttijd-dropdown met kwartieren (00:00 t/m 23:45).
+// Vult de starttijd-dropdown met kwartieren (10:00 t/m 23:45).
 function vulStartTijden() {
   const select = document.getElementById('start-tijd');
   const placeholder = document.createElement('option');
@@ -48,7 +49,7 @@ function vulStartTijden() {
   placeholder.defaultSelected = true;
   placeholder.textContent = 'Kies een tijd';
   select.appendChild(placeholder);
-  for (let m = 0; m < 24 * 60; m += 15) {
+  for (let m = tijdNaarMinuten(MIN_STARTTIJD); m < 24 * 60; m += 15) {
     const optie = document.createElement('option');
     optie.value = optie.textContent = minutenNaarTijd(m);
     select.appendChild(optie);
