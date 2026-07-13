@@ -5,6 +5,11 @@
 // Vereiste secrets (Edge Functions → Secrets):
 //   MOLLIE_API_KEY  – test_... of live_... sleutel uit het Mollie-dashboard
 //   SITE_URL        – adres van de reserveringspagina, bijv. https://reserveren.8-duust.be
+//
+// Optioneel secret:
+//   TURNSTILE_SECRET_KEY – geheime sleutel van Cloudflare Turnstile. Is die
+//                          gezet, dan wordt elke aanvraag pas verwerkt na een
+//                          geslaagde beveiligingscontrole (zie README).
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // Prijzen in hele euro's — altijd hier bepaald, nooit door de browser.
@@ -168,6 +173,40 @@ Deno.serve(async (req) => {
     return antwoord(400, { fout: 'Ongeldige aanvraag.' });
   }
 
+  const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+
+  // Misbruikrem: max. 10 boekingspogingen per IP per uur (zie de migratie
+  // "boekpogingen"). Supabase zet het echte client-IP vooraan in
+  // x-forwarded-for. Faalt de controle zelf, dan boeken we gewoon door:
+  // beschikbaarheid gaat hier vóór de extra rem.
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'onbekend';
+  const { data: toegestaan, error: pogingFout } = await admin.rpc('registreer_boekpoging', { p_ip: ip });
+  if (pogingFout) {
+    console.error('Boekpoging registreren mislukt:', pogingFout.message);
+  } else if (toegestaan === false) {
+    return antwoord(429, {
+      fout: 'Er zijn te veel boekingspogingen vanaf dit netwerk. Probeer het over een uur opnieuw, of bel ons.'
+    });
+  }
+
+  // Cloudflare Turnstile (alleen actief als het secret is ingesteld): de
+  // browser stuurt een token mee dat we hier bij Cloudflare verifiëren.
+  const turnstileSecret = Deno.env.get('TURNSTILE_SECRET_KEY');
+  if (turnstileSecret) {
+    const token = String(invoer.turnstileToken ?? '');
+    const controle = token
+      ? await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+          method: 'POST',
+          body: new URLSearchParams({ secret: turnstileSecret, response: token, remoteip: ip })
+        }).then((r) => r.json()).catch(() => null)
+      : null;
+    if (!controle?.success) {
+      return antwoord(400, {
+        fout: 'De beveiligingscontrole is niet gelukt. Herlaad de pagina en probeer opnieuw.'
+      });
+    }
+  }
+
   const datum = String(invoer.datum ?? '');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(datum)) {
     return antwoord(400, { fout: 'Ongeldige datum.' });
@@ -215,8 +254,6 @@ Deno.serve(async (req) => {
     return antwoord(400, { fout: extrasResultaat.fout });
   }
   const { keuzes, prijsregels, totaal } = extrasResultaat;
-
-  const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
   // 1. Datum vastzetten (geel). De databasefunctie bewaakt alle spelregels
   //    en garandeert dat er nooit twee reserveringen op één dag kunnen bestaan.

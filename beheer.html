@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
+  <!-- Content-Security-Policy: alleen eigen scripts, en verbindingen enkel
+       naar ons Supabase-project. De Supabase-URL staat hier bewust vast: pas
+       deze regel mee aan als het project ooit verhuist. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self';
+    script-src 'self';
+    style-src 'self' https://fonts.googleapis.com;
+    font-src https://fonts.gstatic.com;
+    img-src 'self';
+    connect-src 'self' https://mbvvqdvsspersyjzuyqi.supabase.co wss://mbvvqdvsspersyjzuyqi.supabase.co;
+    object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Beheer – 8-duust reservaties</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -109,6 +119,10 @@
     </div>
   </section>
 
+  <!-- Zelf-gehoste kopie van @supabase/supabase-js (vaste versie) in plaats
+       van een externe CDN: zo kan een gecompromitteerde CDN nooit code op
+       deze pagina uitvoeren. Nieuwe versie? Zie README ("Bibliotheek bijwerken"). -->
+  <script src="assets/supabase-js-2.110.3.min.js"></script>
   <script type="module" src="beheer.js"></script>
 </body>
 </html>

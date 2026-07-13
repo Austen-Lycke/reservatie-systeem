@@ -167,6 +167,37 @@ Dubbele boekingen blijven onmogelijk: de datum is de primaire sleutel in de
 database, dus ook als twee mensen tegelijk klikken kan er maar één de datum
 vastzetten — de ander krijgt meteen een nette melding.
 
+## Beveiliging
+
+- **Misbruikrem (automatisch)**: per IP-adres zijn maximaal 10 boekingspogingen
+  per uur mogelijk. Zo kan niemand met een script alle vrije datums 30 minuten
+  bezet houden. IP-adressen worden hiervoor maximaal 24 uur bewaard
+  (tabel `boekpogingen`) en daarna automatisch gewist.
+- **Cloudflare Turnstile (optioneel, aangeraden)**: een onzichtbare
+  anti-bot-controle op het formulier, gratis. Inschakelen:
+  1. Maak een gratis Cloudflare-account en voeg onder **Turnstile** de site
+     `reserveren.8-duust.be` toe (widget type "Managed"). Je krijgt een
+     **Site Key** en een **Secret Key**.
+  2. Plak de Site Key in [`supabase-config.js`](supabase-config.js) bij
+     `turnstileSiteKey`.
+  3. Voeg in Supabase het secret toe: **Edge Functions → Secrets** →
+     `TURNSTILE_SECRET_KEY` = de Secret Key.
+  Zolang site key of secret ontbreekt, werkt alles gewoon zonder deze controle.
+- **Zelf-gehoste Supabase-bibliotheek**: de browserbibliotheek staat als vast
+  bestand in [`assets/`](assets/) in plaats van op een externe CDN, zodat een
+  CDN-hack nooit code op deze site kan uitvoeren. **Bibliotheek bijwerken**:
+  download de gewenste versie, zet hem in `assets/` en verwijs in beide
+  HTML-bestanden naar de nieuwe bestandsnaam:
+
+  ```bash
+  curl -o assets/supabase-js-<VERSIE>.min.js \
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@<VERSIE>/dist/umd/supabase.min.js"
+  ```
+- **Content-Security-Policy**: beide pagina's staan alleen eigen scripts toe
+  (plus Turnstile) en alleen verbindingen naar ons Supabase-project. Verhuist
+  het project ooit naar een andere Supabase-URL, pas dan ook de
+  `Content-Security-Policy`-regel in `index.html` en `beheer.html` aan.
+
 ## Privacy
 
 Bezoekers zien alleen **welke dagen bezet of in behandeling zijn** — nooit wie er

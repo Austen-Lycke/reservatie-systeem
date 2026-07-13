@@ -222,7 +222,9 @@ function maakDemoOpslag(onChange) {
 }
 
 async function maakSupabaseOpslag(onChange) {
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+  // De bibliotheek wordt zelf gehost (assets/supabase-js-*.min.js, geladen in
+  // index.html) en zet één globaal object neer — geen externe CDN.
+  const { createClient } = window.supabase;
   const client = createClient(supabaseConfig.url, supabaseConfig.anonKey);
 
   async function laadAlles() {
@@ -284,6 +286,57 @@ async function maakSupabaseOpslag(onChange) {
       return data; // null = datum is (weer) vrij
     }
   };
+}
+
+// ---------- Cloudflare Turnstile (optionele anti-bot-controle) ----------
+
+// Alleen actief als er een turnstileSiteKey in supabase-config.js staat
+// (de server controleert het token dan met het secret TURNSTILE_SECRET_KEY).
+let turnstileWidgetId = null;
+let turnstileScript = null; // Promise die het laden van het script bewaakt
+
+function turnstileActief() {
+  return supabaseIsGeconfigureerd() && Boolean(supabaseConfig.turnstileSiteKey);
+}
+
+function laadTurnstileScript() {
+  if (!turnstileScript) {
+    turnstileScript = new Promise((klaar, mislukt) => {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.onload = klaar;
+      script.onerror = () => mislukt(new Error('De beveiligingscontrole kon niet geladen worden.'));
+      document.head.appendChild(script);
+    });
+  }
+  return turnstileScript;
+}
+
+// Toont de widget in het formulier (eerste keer) of zet hem terug op nul
+// (tokens zijn eenmalig bruikbaar).
+async function toonTurnstile() {
+  if (!turnstileActief()) return;
+  try {
+    await laadTurnstileScript();
+    const houder = document.getElementById('turnstile-houder');
+    houder.classList.remove('verborgen');
+    if (turnstileWidgetId === null) {
+      turnstileWidgetId = window.turnstile.render(houder, {
+        sitekey: supabaseConfig.turnstileSiteKey
+      });
+    } else {
+      window.turnstile.reset(turnstileWidgetId);
+    }
+  } catch (fout) {
+    // De server weigert de aanvraag dan toch; hier alvast duidelijk zijn.
+    toonFormulierFout(fout.message);
+  }
+}
+
+function turnstileToken() {
+  if (!turnstileActief() || turnstileWidgetId === null) return undefined;
+  return window.turnstile.getResponse(turnstileWidgetId) || undefined;
 }
 
 // ---------- Applicatie ----------
@@ -570,6 +623,7 @@ function openDialoog(datumStr) {
   if (weekdagBoeking) stopTypeFeestAnimatie();
   else startTypeFeestAnimatie();
   dialoogEl.showModal();
+  toonTurnstile();
 }
 
 function sluitDialoog() {
@@ -653,12 +707,17 @@ async function verwerkFormulier(event) {
     toonFormulierFout(extrasFout);
     return;
   }
+  if (turnstileActief() && !turnstileToken()) {
+    toonFormulierFout('Wacht even tot de beveiligingscontrole klaar is en probeer opnieuw.');
+    return;
+  }
 
   const details = {
     naam, email, telefoon, typeFeest, aantalPersonen,
     startTijd, eindTijd, opbouwMinuten,
     opbouwVanaf: minutenNaarTijd(tijdNaarMinuten(startTijd) - opbouwMinuten),
-    opmerkingen, extras
+    opmerkingen, extras,
+    turnstileToken: turnstileToken()
   };
 
   const knop = document.getElementById('bevestig-knop');
@@ -675,6 +734,10 @@ async function verwerkFormulier(event) {
     }
   } catch (fout) {
     toonFormulierFout(fout.message || 'Er ging iets mis. Probeer het opnieuw.');
+    // Turnstile-tokens zijn eenmalig: na een mislukte poging een nieuwe vragen.
+    if (turnstileActief() && turnstileWidgetId !== null) {
+      window.turnstile.reset(turnstileWidgetId);
+    }
   } finally {
     knop.disabled = false;
     werkTotaalBij(); // zet ook het knoplabel ("Reserveren en € X betalen") terug

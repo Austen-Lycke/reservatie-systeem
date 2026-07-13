@@ -3,6 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Content-Security-Policy: alleen eigen scripts (plus Cloudflare
+       Turnstile), en verbindingen enkel naar ons Supabase-project. De
+       Supabase-URL staat hier bewust vast: pas deze regel mee aan als het
+       project ooit verhuist (zie ook supabase-config.js). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self';
+    script-src 'self' https://challenges.cloudflare.com;
+    frame-src https://challenges.cloudflare.com;
+    style-src 'self' https://fonts.googleapis.com;
+    font-src https://fonts.gstatic.com;
+    img-src 'self';
+    connect-src 'self' https://mbvvqdvsspersyjzuyqi.supabase.co wss://mbvvqdvsspersyjzuyqi.supabase.co https://challenges.cloudflare.com;
+    object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Reserveer jouw privéfeest – 8-duust</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -248,6 +260,10 @@
           </span>
         </label>
 
+        <!-- Cloudflare Turnstile (anti-bot); blijft leeg zolang er geen
+             turnstileSiteKey in supabase-config.js staat. -->
+        <div id="turnstile-houder" class="verborgen"></div>
+
         <p id="formulier-fout" class="formulier-fout verborgen"></p>
 
         <div class="dialoog-knoppen">
@@ -260,6 +276,10 @@
 
   <div id="toast" class="toast verborgen"></div>
 
+  <!-- Zelf-gehoste kopie van @supabase/supabase-js (vaste versie) in plaats
+       van een externe CDN: zo kan een gecompromitteerde CDN nooit code op
+       deze pagina uitvoeren. Nieuwe versie? Zie README ("Bibliotheek bijwerken"). -->
+  <script src="assets/supabase-js-2.110.3.min.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

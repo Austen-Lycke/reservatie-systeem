@@ -491,9 +491,11 @@ async function init() {
     return;
   }
 
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+  // De bibliotheek wordt zelf gehost (assets/supabase-js-*.min.js, geladen in
+  // beheer.html) en zet één globaal object neer — geen externe CDN.
   // De standaardinstellingen (sessie bewaren + magic-link-tokens uit de URL
   // oppikken) zijn precies wat we nodig hebben.
+  const { createClient } = window.supabase;
   client = createClient(supabaseConfig.url, supabaseConfig.anonKey);
 
   document.getElementById('uitlog-knop').addEventListener('click', async () => {
