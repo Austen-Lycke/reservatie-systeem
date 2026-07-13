@@ -15,12 +15,10 @@ const PRIJZEN = {
   frietjesFrikandel: 7,   // per persoon
   hamburgerFrietjes: 8,   // per persoon
   pita: 6,                // per persoon
-  eigenFoodtruck: 25,     // forfait stroom/water/kabels/afval
-  springkasteelEigenLeverancier: 15 // forfait stroom/kabels
+  eigenFoodtruck: 25      // forfait stroom/water/kabels/afval
 };
 
 const MUZIEK_KEUZES = ['eigenDj', 'spotify', 'bar'];
-const SPRINGKASTEEL_KEUZES = ['vzw', 'eigenLeverancier', 'geen'];
 
 // Maandag t/m donderdag gelden strengere regels: enkel teambuildings of
 // vergaderingen, tussen 10:00 en 18:00, zonder muziek, vanaf 15 personen.
@@ -108,13 +106,11 @@ function valideerExtras(ruw: unknown, weekdag: boolean):
     if (!MUZIEK_KEUZES.includes(muziek)) return { fout: 'Ongeldige extra opties.' };
   }
 
-  const springkasteel = extras.springkasteel === undefined ? 'geen' : String(extras.springkasteel);
-  if (!SPRINGKASTEEL_KEUZES.includes(springkasteel)) return { fout: 'Ongeldige extra opties.' };
-  if (springkasteel === 'eigenLeverancier') {
-    prijsregels.push({
-      label: 'Springkasteel eigen leverancier (forfait stroom/kabels)',
-      bedrag: PRIJZEN.springkasteelEigenLeverancier
-    });
+  // Springkastelen worden niet meer aangeboden. Een oud (gecacht) formulier
+  // kan de keuze nog meesturen; alles behalve "geen" expliciet weigeren zodat
+  // niemand iets boekt dat niet meer bestaat.
+  if (extras.springkasteel !== undefined && extras.springkasteel !== 'geen') {
+    return { fout: 'Een springkasteel is niet meer mogelijk. Herlaad de pagina en probeer opnieuw.' };
   }
 
   return {
@@ -122,8 +118,7 @@ function valideerExtras(ruw: unknown, weekdag: boolean):
       foodtruckVzw: foodtruckGekozen ? keuzesFoodtruck : false,
       eigenFoodtruck,
       bbq,
-      ...(muziek !== undefined && { muziek }),
-      springkasteel
+      ...(muziek !== undefined && { muziek })
     },
     prijsregels,
     totaal: prijsregels.reduce((som, regel) => som + regel.bedrag, 0)

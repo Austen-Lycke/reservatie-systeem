@@ -27,8 +27,7 @@ const PRIJZEN = {
   frietjesFrikandel: 7,   // per persoon
   hamburgerFrietjes: 8,   // per persoon
   pita: 6,                // per persoon
-  eigenFoodtruck: 25,     // forfait stroom/water/kabels/afval
-  springkasteelEigenLeverancier: 15 // forfait stroom/kabels
+  eigenFoodtruck: 25      // forfait stroom/water/kabels/afval
 };
 
 // ---------- Datum-hulpfuncties ----------
@@ -459,12 +458,6 @@ function berekenPrijsregels() {
   if (formulierEl.elements.eigenFoodtruck.value === 'ja') {
     regels.push({ label: 'Eigen foodtruck (forfait)', bedrag: PRIJZEN.eigenFoodtruck });
   }
-  if (formulierEl.elements.springkasteel.value === 'eigenLeverancier') {
-    regels.push({
-      label: 'Springkasteel eigen leverancier (forfait)',
-      bedrag: PRIJZEN.springkasteelEigenLeverancier
-    });
-  }
   return regels;
 }
 
@@ -495,8 +488,7 @@ function verzamelExtras() {
         }
       : false,
     eigenFoodtruck: formulierEl.elements.eigenFoodtruck.value === 'ja',
-    bbq: formulierEl.elements.bbq.value === 'ja',
-    springkasteel: formulierEl.elements.springkasteel.value
+    bbq: formulierEl.elements.bbq.value === 'ja'
   };
   // Op ma-do is muziek niet mogelijk: het veld gaat dan helemaal niet mee.
   if (!weekdagBoeking) extras.muziek = formulierEl.elements.muziek.value;

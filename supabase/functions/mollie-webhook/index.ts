@@ -91,8 +91,8 @@ async function stuurBevestigingsmail(
       ['Eigen foodtruck', keuzes.eigenFoodtruck ? 'Ja (forfait € 25)' : 'Nee'],
       ['BBQ zelf meebrengen', keuzes.bbq ? 'Ja' : 'Nee']
     );
-    // Drankkaarten bestaan niet meer en op ma-do is er geen muziekkeuze;
-    // alleen tonen wat er bij het boeken echt is vastgelegd.
+    // Drankkaarten en springkastelen bestaan niet meer en op ma-do is er
+    // geen muziekkeuze; alleen tonen wat er bij het boeken echt is vastgelegd.
     if (keuzes.drankkaarten !== undefined) {
       const drankkaarten = (keuzes.drankkaarten ?? {}) as Record<string, unknown>;
       rijen.push(['Drankkaarten', DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—']);
@@ -100,7 +100,9 @@ async function stuurBevestigingsmail(
     if (keuzes.muziek !== undefined) {
       rijen.push(['Muziek', MUZIEK_LABELS[String(keuzes.muziek)] ?? '—']);
     }
-    rijen.push(['Springkasteel', SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—']);
+    if (keuzes.springkasteel !== undefined) {
+      rijen.push(['Springkasteel', SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—']);
+    }
   }
   for (const regel of extra?.prijsregels ?? []) {
     rijen.push([toon(regel.label), `€ ${Number(regel.bedrag)}`]);
