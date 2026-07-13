@@ -5,71 +5,109 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
   <title>Beheer – 8-duust reservaties</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Beheer – reservaties</h1>
-    <p class="intro">
-      Overzicht van alle betaalde reserveringen, alleen voor de organisatie.
-    </p>
-  </header>
-
-  <div id="fout-banner" class="banner banner-fout verborgen"></div>
-
-  <main>
-    <!-- Inloggen: e-mailadres invullen, inloglink ontvangen, klaar. -->
-    <section id="login-sectie" class="bezoek-sectie">
-      <h2>Inloggen</h2>
-      <p>
-        Vul je e-mailadres in en je ontvangt een inloglink.
-      </p>
+  <!-- Inloggen: e-mailadres invullen, inloglink ontvangen, klaar. -->
+  <section id="login-sectie" class="login-scherm">
+    <div class="login-kaart">
+      <img src="assets/duust-logo.webp" alt="8-duust">
+      <h1>Beheer — inloggen</h1>
+      <p>Vul je e-mailadres in en je ontvangt een inloglink. Alleen voor de organisatie.</p>
+      <div id="fout-banner-login" class="banner banner-fout verborgen"></div>
       <form id="login-formulier" class="login-formulier">
         <label for="login-email">E-mailadres</label>
         <input type="email" id="login-email" required maxlength="200" autocomplete="email">
-        <button type="submit" id="login-knop" class="primair">Stuur inloglink</button>
+        <button type="submit" id="login-knop" class="knop-groen">Stuur inloglink</button>
       </form>
       <p id="login-status" class="verborgen"></p>
-    </section>
+    </div>
+  </section>
 
-    <!-- Portaal: pas zichtbaar na inloggen. -->
-    <section id="portaal-sectie" class="verborgen">
+  <!-- Portaal: pas zichtbaar na inloggen. -->
+  <section id="portaal-sectie" class="verborgen">
+    <header class="topbalk">
+      <div class="topbalk-links">
+        <img src="assets/duust-logo.webp" alt="8-duust">
+        <div>
+          <div class="topbalk-titel">Beheer</div>
+          <div class="topbalk-sub">Reservaties privéfeesten</div>
+        </div>
+      </div>
       <div class="beheer-balk">
         <span id="ingelogd-als"></span>
         <button type="button" id="uitlog-knop">Uitloggen</button>
       </div>
+    </header>
+
+    <div class="pagina pagina-breed">
+      <div id="fout-banner" class="banner banner-fout verborgen"></div>
 
       <div id="portaal-inhoud">
-      <section class="kalender-sectie">
-        <div class="kalender-kop">
-          <button id="vorige-maand" type="button" aria-label="Vorige maand">‹</button>
-          <h2 id="maand-titel"></h2>
-          <button id="volgende-maand" type="button" aria-label="Volgende maand">›</button>
+        <div class="statistieken">
+          <div class="kaart stat">
+            <div class="stat-label" id="stat-feesten-label">Feesten deze maand</div>
+            <div class="stat-waarde" id="stat-feesten">–</div>
+          </div>
+          <div class="kaart stat">
+            <div class="stat-label" id="stat-ontvangen-label">Ontvangen deze maand</div>
+            <div class="stat-waarde" id="stat-ontvangen">–</div>
+          </div>
+          <div class="kaart stat">
+            <div class="stat-label" id="stat-volgend-label">Volgend feest</div>
+            <div class="stat-volgend" id="stat-volgend">–</div>
+          </div>
         </div>
 
-        <div class="legenda">
-          <span><span class="legenda-blok bezet"></span> Bezet – klik voor details</span>
+        <div class="beheer-indeling">
+          <section class="kaart kalender-sectie">
+            <div class="kalender-kop">
+              <button id="vorige-maand" type="button" aria-label="Vorige maand">‹</button>
+              <h2 id="maand-titel"></h2>
+              <button id="volgende-maand" type="button" aria-label="Volgende maand">›</button>
+            </div>
+
+            <div class="weekdagen">
+              <div>ma</div><div>di</div><div>wo</div><div>do</div><div>vr</div><div>za</div><div>zo</div>
+            </div>
+            <div id="kalender" class="kalender"></div>
+
+            <div class="legenda">
+              <span><span class="legenda-blok bezet"></span> Bezet — klik voor details</span>
+              <span><span class="legenda-blok niet-beschikbaar"></span> Vrij</span>
+            </div>
+          </section>
+
+          <section id="detail-paneel" class="kaart verborgen" aria-live="polite">
+            <div class="detail-kop">
+              <h2 id="detail-titel"></h2>
+              <span class="pil-status">Betaald</span>
+            </div>
+            <p id="detail-subtitel" class="detail-subtitel"></p>
+            <div id="detail-lijst" class="detail-lijst"></div>
+            <div id="detail-prijs" class="prijs-blok"></div>
+            <div id="detail-voet" class="detail-voet"></div>
+            <div class="detail-acties">
+              <a id="detail-bellen" class="actie-bellen" href="#">Bellen</a>
+              <a id="detail-mailen" class="actie-mailen" href="#">E-mailen</a>
+            </div>
+          </section>
         </div>
 
-        <div class="weekdagen">
-          <div>ma</div><div>di</div><div>wo</div><div>do</div><div>vr</div><div>za</div><div>zo</div>
-        </div>
-        <div id="kalender" class="kalender"></div>
-      </section>
-
-      <section id="detail-paneel" class="bezoek-sectie verborgen" aria-live="polite">
-        <h2 id="detail-titel"></h2>
-        <dl id="detail-lijst" class="detail-lijst"></dl>
-      </section>
-
-      <section class="bezoek-sectie">
-        <h2>Komende reservaties</h2>
-        <ul id="komende-lijst" class="komende-lijst"></ul>
-        <p id="komende-leeg" class="verborgen">Er zijn geen komende reservaties.</p>
-      </section>
+        <section class="kaart komende-sectie">
+          <div class="komende-kop">
+            <h2>Komende reservaties</h2>
+            <select id="komende-filter" aria-label="Filter op maand"></select>
+          </div>
+          <div id="komende-lijst" class="komende-lijst"></div>
+          <p id="komende-leeg" class="verborgen">Er zijn geen komende reservaties.</p>
+        </section>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
   <script type="module" src="beheer.js"></script>
 </body>

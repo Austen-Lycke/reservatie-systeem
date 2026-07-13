@@ -3,225 +3,269 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reserveringen – Privéfeesten</title>
+  <title>Reserveer jouw privéfeest – 8-duust</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Reserveer jouw privéfeest</h1>
-    <p class="intro">
-      Kies een beschikbare (groene) dag in de kalender om te reserveren.
-    </p>
+  <header class="topbalk">
+    <div class="topbalk-links">
+      <img src="assets/duust-logo.webp" alt="8-duust">
+      <span class="topbalk-label">Zaalverhuur</span>
+    </div>
+    <a class="topbalk-telefoon" href="tel:+32475419377">📞 +32 475 41 93 77</a>
   </header>
 
-  <div id="modus-banner" class="banner verborgen"></div>
-  <div id="fout-banner" class="banner banner-fout verborgen"></div>
+  <div class="pagina">
+    <div id="modus-banner" class="banner verborgen"></div>
+    <div id="fout-banner" class="banner banner-fout verborgen"></div>
 
-  <main>
-    <section class="bezoek-sectie">
-      <h2>Bezoek aan de zaal</h2>
-      <p>
-        Wenst u de zaal graag eerst te bezoeken voordat u uw reservatie
-        definitief maakt? Dat kan uiteraard. Gelieve hiervoor vooraf contact
-        op te nemen via:
-      </p>
-      <p class="bezoek-telefoon">
-        📞 <a href="tel:+32475419377">+32 475 41 93 77</a>
-      </p>
-      <p>
-        Wij maken graag tijd vrij om u rond te leiden en al uw vragen te
-        beantwoorden.
-      </p>
-    </section>
+    <h1>Reserveer jouw privéfeest</h1>
+    <p class="intro">
+      Kies een <strong class="groen">groene</strong> dag in de kalender.
+      Je betaalt € 60 reservatiekosten meteen online en de datum is
+      definitief van jou.
+    </p>
 
-    <section class="kalender-sectie">
-      <div class="kalender-kop">
-        <button id="vorige-maand" type="button" aria-label="Vorige maand">‹</button>
-        <h2 id="maand-titel"></h2>
-        <button id="volgende-maand" type="button" aria-label="Volgende maand">›</button>
-      </div>
+    <main class="indeling">
+      <section class="kaart kalender-sectie">
+        <div class="kalender-kop">
+          <button id="vorige-maand" type="button" aria-label="Vorige maand">‹</button>
+          <h2 id="maand-titel"></h2>
+          <button id="volgende-maand" type="button" aria-label="Volgende maand">›</button>
+        </div>
 
-      <div class="legenda">
-        <span><span class="legenda-blok beschikbaar"></span> Beschikbaar</span>
-        <span><span class="legenda-blok bezet"></span> Bezet</span>
-        <span><span class="legenda-blok in-afwachting"></span> Betaling in behandeling</span>
-        <span><span class="legenda-blok niet-beschikbaar"></span> Niet beschikbaar</span>
-      </div>
+        <div class="weekdagen">
+          <div>ma</div><div>di</div><div>wo</div><div>do</div><div>vr</div><div>za</div><div>zo</div>
+        </div>
+        <div id="kalender" class="kalender"></div>
 
-      <div class="weekdagen">
-        <div>ma</div><div>di</div><div>wo</div><div>do</div><div>vr</div><div>za</div><div>zo</div>
-      </div>
-      <div id="kalender" class="kalender"></div>
-      <p id="live-status" class="live-status"></p>
-    </section>
-  </main>
+        <div class="legenda">
+          <span><span class="legenda-blok beschikbaar"></span> Beschikbaar</span>
+          <span><span class="legenda-blok bezet"></span> Bezet</span>
+          <span><span class="legenda-blok in-afwachting"></span> Betaling in behandeling</span>
+          <span><span class="legenda-blok niet-beschikbaar"></span> Niet beschikbaar</span>
+        </div>
+        <p id="live-status" class="live-status"></p>
+      </section>
+
+      <aside class="zijkolom">
+        <section class="kaart bezoek-kaart">
+          <h2>Eerst de zaal bezoeken?</h2>
+          <p>
+            Dat kan uiteraard — wij leiden u graag rond en beantwoorden al
+            uw vragen. Neem vooraf even contact op.
+          </p>
+          <a class="knop-groen" href="tel:+32475419377">Bel +32 475 41 93 77</a>
+        </section>
+
+        <section class="kaart info-kaart">
+          <h2>Goed om te weten</h2>
+          <ul>
+            <li>Maximaal 1 feest per dag</li>
+            <li>Eindtijd uiterlijk 02:00 &rsquo;s nachts</li>
+            <li>Tot 1,5 uur vooraf inrichten</li>
+            <li>€ 60 reservatiekosten, direct online (o.a. Bancontact)</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+  </div>
 
   <dialog id="reserveer-dialoog">
     <form id="reserveer-formulier" method="dialog">
-      <h3>Reservering voor <span id="dialoog-datum"></span></h3>
-
-      <label for="naam">Naam en Voornaam *</label>
-      <input type="text" id="naam" name="naam" required maxlength="100"
-             placeholder="bv. Peeters Jan">
-
-      <label for="email">E-mailadres *</label>
-      <input type="email" id="email" name="email" required maxlength="200"
-             placeholder="bv. jan.peeters@gmail.com">
-
-      <label for="telefoon">Telefoonnummer *</label>
-      <input type="tel" id="telefoon" name="telefoon" required maxlength="30"
-             placeholder="bv. 0470 12 34 56">
-
-      <label for="type-feest">Type feest *</label>
-      <input type="text" id="type-feest" name="typeFeest" required maxlength="100"
-             placeholder="bv. lentefeest" autocomplete="off">
-
-      <label for="aantal-personen">Aantal personen *</label>
-      <input type="number" id="aantal-personen" name="aantalPersonen" min="25" max="500" required
-             placeholder="bv. 50">
-      <small>Reserveren kan vanaf 25 personen.</small>
-
-      <div class="tijden">
+      <div class="dialoog-kop">
         <div>
-          <label for="start-tijd">Starttijd feest *</label>
-          <select id="start-tijd" name="startTijd" required></select>
+          <div class="dialoog-sublabel">Reservering voor</div>
+          <div class="dialoog-titel" id="dialoog-datum"></div>
         </div>
-        <div>
-          <label for="eind-tijd">Eindtijd feest *</label>
-          <select id="eind-tijd" name="eindTijd" required></select>
-          <small>Uiterlijk 02:00 &rsquo;s nachts</small>
-        </div>
+        <button type="button" id="sluit-knop" class="dialoog-sluit" aria-label="Sluiten">✕</button>
       </div>
 
-      <label for="opbouw">Hoe vroeg wil je komen om in te richten?</label>
-      <select id="opbouw" name="opbouwMinuten">
-        <option value="0">Niet eerder (vanaf de starttijd)</option>
-        <option value="30">30 minuten eerder</option>
-        <option value="60">1 uur eerder</option>
-        <option value="90" selected>1,5 uur eerder (maximum)</option>
-      </select>
-      <small id="opbouw-hint"></small>
-
-      <label for="opmerkingen">Opmerkingen (optioneel)</label>
-      <textarea id="opmerkingen" name="opmerkingen" rows="3" maxlength="1000"></textarea>
-
-      <fieldset class="extra-opties">
-        <legend>Extra opties (optioneel)</legend>
-
-        <div class="extra-sectie">
-          <span class="extra-vraag">Foodtruck van de vzw ("de Dikke Mier")?</span>
-          <div class="keuze-rij">
-            <label><input type="radio" name="foodtruckVzw" value="ja"> Ja</label>
-            <label><input type="radio" name="foodtruckVzw" value="nee" checked> Nee</label>
+      <div class="dialoog-body">
+        <div class="veld-rij">
+          <div class="veld">
+            <label for="naam">Naam en voornaam *</label>
+            <input type="text" id="naam" name="naam" required maxlength="100"
+                   placeholder="bv. Peeters Jan">
           </div>
-          <div class="extra-detail verborgen" data-toon-bij="foodtruckVzw=ja">
-            <div class="gerecht-rij">
-              <label for="ft-frikandel">Frietjes met frikandel en saus — € 7,00 p.p.</label>
-              <input type="number" id="ft-frikandel" min="0" max="500" placeholder="0">
+          <div class="veld">
+            <label for="telefoon">Telefoonnummer *</label>
+            <input type="tel" id="telefoon" name="telefoon" required maxlength="30"
+                   placeholder="bv. 0470 12 34 56">
+          </div>
+        </div>
+
+        <div class="veld">
+          <label for="email">E-mailadres *</label>
+          <input type="email" id="email" name="email" required maxlength="200"
+                 placeholder="bv. jan.peeters@gmail.com">
+        </div>
+
+        <div class="veld-rij">
+          <div class="veld">
+            <label for="type-feest">Type feest *</label>
+            <input type="text" id="type-feest" name="typeFeest" required maxlength="100"
+                   placeholder="bv. lentefeest" autocomplete="off">
+          </div>
+          <div class="veld">
+            <label for="aantal-personen">Aantal personen *</label>
+            <input type="number" id="aantal-personen" name="aantalPersonen" min="25" max="500" required
+                   placeholder="bv. 50">
+            <small>Vanaf 25 personen</small>
+          </div>
+        </div>
+
+        <div class="veld-rij">
+          <div class="veld">
+            <label for="start-tijd">Starttijd feest *</label>
+            <select id="start-tijd" name="startTijd" required></select>
+          </div>
+          <div class="veld">
+            <label for="eind-tijd">Eindtijd feest *</label>
+            <select id="eind-tijd" name="eindTijd" required></select>
+            <small>Uiterlijk 02:00 &rsquo;s nachts</small>
+          </div>
+        </div>
+
+        <div class="veld">
+          <label for="opbouw">Hoe vroeg wil je komen om in te richten?</label>
+          <select id="opbouw" name="opbouwMinuten">
+            <option value="0">Niet eerder (vanaf de starttijd)</option>
+            <option value="30">30 minuten eerder</option>
+            <option value="60">1 uur eerder</option>
+            <option value="90" selected>1,5 uur eerder (maximum)</option>
+          </select>
+          <small id="opbouw-hint"></small>
+        </div>
+
+        <div class="veld">
+          <label for="opmerkingen">Opmerkingen (optioneel)</label>
+          <textarea id="opmerkingen" name="opmerkingen" rows="2" maxlength="1000"></textarea>
+        </div>
+
+        <fieldset class="extra-opties">
+          <div class="extra-kop">Extra opties <span>(optioneel)</span></div>
+
+          <div class="extra-sectie">
+            <span class="extra-vraag">Foodtruck van de vzw ("de Dikke Mier")?</span>
+            <div class="keuze-pillen">
+              <label class="pil"><input type="radio" name="foodtruckVzw" value="ja"> Ja</label>
+              <label class="pil"><input type="radio" name="foodtruckVzw" value="nee" checked> Nee</label>
             </div>
-            <div class="gerecht-rij">
-              <label for="ft-hamburger">Hamburger met frietjes en saus — € 8,00 p.p.</label>
-              <input type="number" id="ft-hamburger" min="0" max="500" placeholder="0">
-            </div>
-            <div class="gerecht-rij">
-              <label for="ft-pita">Pita met saus — € 6,00 p.p.</label>
-              <input type="number" id="ft-pita" min="0" max="500" placeholder="0">
-            </div>
-            <small>Vul per gerecht het aantal personen in.</small>
-          </div>
-        </div>
-
-        <div class="extra-sectie">
-          <span class="extra-vraag">Regel je zelf voor een foodtruck?</span>
-          <div class="keuze-rij">
-            <label><input type="radio" name="eigenFoodtruck" value="ja"> Ja</label>
-            <label><input type="radio" name="eigenFoodtruck" value="nee" checked> Nee</label>
-          </div>
-          <div class="extra-detail verborgen" data-toon-bij="eigenFoodtruck=ja">
-            <small>
-              Bij een eigen foodtruck rekenen we een forfait van <strong>€ 25,00</strong> aan
-              voor elektriciteit, water, gebruik van kabels en extra afvalverwerking.
-              Dit wordt bij het totaal geteld.
-            </small>
-          </div>
-        </div>
-
-        <div class="extra-sectie">
-          <span class="extra-vraag">Breng je zelf een BBQ mee?</span>
-          <div class="keuze-rij">
-            <label><input type="radio" name="bbq" value="ja"> Ja</label>
-            <label><input type="radio" name="bbq" value="nee" checked> Nee</label>
-          </div>
-        </div>
-
-        <div class="extra-sectie">
-          <span class="extra-vraag">Drankkaarten</span>
-          <div class="keuze-rij keuze-kolom">
-            <label><input type="radio" name="drankkaarten" value="vooraf20"> Vooraf bestellen — € 20,00 per kaart</label>
-            <label><input type="radio" name="drankkaarten" value="vooraf12"> Vooraf bestellen — € 12,00 per kaart</label>
-            <label><input type="radio" name="drankkaarten" value="terPlaatse"> Ik regel mijn drankkaarten liever ter plaatse</label>
-            <label><input type="radio" name="drankkaarten" value="geen" checked> Geen drankkaarten</label>
-          </div>
-          <div class="extra-detail verborgen" data-toon-bij="drankkaarten=vooraf20|vooraf12">
-            <div class="gerecht-rij">
-              <label for="drankkaarten-aantal">Aantal drankkaarten</label>
-              <input type="number" id="drankkaarten-aantal" min="1" max="500" placeholder="bv. 50">
+            <div class="extra-detail verborgen" data-toon-bij="foodtruckVzw=ja">
+              <div class="gerecht-rij">
+                <label for="ft-frikandel">Frietjes met frikandel en saus — € 7,00 p.p.</label>
+                <input type="number" id="ft-frikandel" min="0" max="500" placeholder="0">
+              </div>
+              <div class="gerecht-rij">
+                <label for="ft-hamburger">Hamburger met frietjes en saus — € 8,00 p.p.</label>
+                <input type="number" id="ft-hamburger" min="0" max="500" placeholder="0">
+              </div>
+              <div class="gerecht-rij">
+                <label for="ft-pita">Pita met saus — € 6,00 p.p.</label>
+                <input type="number" id="ft-pita" min="0" max="500" placeholder="0">
+              </div>
+              <small>Vul per gerecht het aantal personen in.</small>
             </div>
           </div>
-        </div>
 
-        <div class="extra-sectie">
-          <span class="extra-vraag">Muziek</span>
-          <div class="keuze-rij keuze-kolom">
-            <label><input type="radio" name="muziek" value="eigenDj"> Ik breng mijn eigen DJ mee (de DJ voorziet zelf alle materiaal)</label>
-            <label><input type="radio" name="muziek" value="spotify"> Ik breng mijn eigen Spotify-playlist mee</label>
-            <label><input type="radio" name="muziek" value="bar" checked> Ik laat de bar de muziek verzorgen</label>
+          <div class="extra-sectie">
+            <span class="extra-vraag">Regel je zelf een foodtruck?</span>
+            <div class="keuze-pillen">
+              <label class="pil"><input type="radio" name="eigenFoodtruck" value="ja"> Ja</label>
+              <label class="pil"><input type="radio" name="eigenFoodtruck" value="nee" checked> Nee</label>
+            </div>
+            <div class="extra-detail verborgen" data-toon-bij="eigenFoodtruck=ja">
+              Forfait <strong>€ 25,00</strong> voor elektriciteit, water, kabels en
+              afvalverwerking — wordt bij het totaal geteld.
+            </div>
           </div>
-        </div>
 
-        <div class="extra-sectie">
-          <span class="extra-vraag">Springkasteel</span>
-          <div class="keuze-rij keuze-kolom">
-            <label><input type="radio" name="springkasteel" value="vzw"> Springkasteel van de vzw</label>
-            <label><input type="radio" name="springkasteel" value="eigenLeverancier"> Eigen leverancier — forfait € 15,00 voor stroom en kabels</label>
-            <label><input type="radio" name="springkasteel" value="geen" checked> Geen springkasteel</label>
+          <div class="extra-sectie">
+            <span class="extra-vraag">Breng je zelf een BBQ mee?</span>
+            <div class="keuze-pillen">
+              <label class="pil"><input type="radio" name="bbq" value="ja"> Ja</label>
+              <label class="pil"><input type="radio" name="bbq" value="nee" checked> Nee</label>
+            </div>
           </div>
+
+          <div class="extra-sectie">
+            <span class="extra-vraag">Drankkaarten</span>
+            <div class="keuze-kolom">
+              <label><input type="radio" name="drankkaarten" value="vooraf20"> Vooraf bestellen — € 20,00 per kaart</label>
+              <label><input type="radio" name="drankkaarten" value="vooraf12"> Vooraf bestellen — € 12,00 per kaart</label>
+              <label><input type="radio" name="drankkaarten" value="terPlaatse"> Ik regel ze liever ter plaatse</label>
+              <label><input type="radio" name="drankkaarten" value="geen" checked> Geen drankkaarten</label>
+            </div>
+            <div class="extra-detail verborgen" data-toon-bij="drankkaarten=vooraf20|vooraf12">
+              <div class="gerecht-rij">
+                <label for="drankkaarten-aantal">Aantal drankkaarten</label>
+                <input type="number" id="drankkaarten-aantal" min="1" max="500" placeholder="bv. 50">
+              </div>
+            </div>
+          </div>
+
+          <div class="extra-sectie">
+            <span class="extra-vraag">Muziek</span>
+            <div class="keuze-kolom">
+              <label><input type="radio" name="muziek" value="eigenDj"> Eigen DJ (voorziet zelf alle materiaal)</label>
+              <label><input type="radio" name="muziek" value="spotify"> Eigen Spotify-playlist</label>
+              <label><input type="radio" name="muziek" value="bar" checked> De bar verzorgt de muziek</label>
+            </div>
+          </div>
+
+          <div class="extra-sectie">
+            <span class="extra-vraag">Springkasteel</span>
+            <div class="keuze-kolom">
+              <label><input type="radio" name="springkasteel" value="vzw"> Springkasteel van de vzw</label>
+              <label><input type="radio" name="springkasteel" value="eigenLeverancier"> Eigen leverancier — forfait € 15,00</label>
+              <label><input type="radio" name="springkasteel" value="geen" checked> Geen springkasteel</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="prijs-info">
+          <div id="prijs-regels"></div>
+          <div class="prijs-totaal-rij">
+            <span>Totaal</span>
+            <strong id="prijs-totaal">€ 60</strong>
+          </div>
+          <p>
+            Direct online te betalen (o.a. Bancontact). De € 60 reservatiekosten
+            worden <strong>niet terugbetaald</strong>, behalve als de organisatie
+            zelf annuleert. De datum blijft 30 minuten voor jou vast terwijl je
+            betaalt.
+          </p>
         </div>
-      </fieldset>
 
-      <div class="prijs-info">
-        <div id="prijs-regels"></div>
-        <strong>Totaal: <span id="prijs-totaal">€ 60</span></strong><br>
-        Je betaalt dit bedrag meteen online (o.a. Bancontact) om de datum definitief
-        vast te leggen. De reservatiekosten van € 60 worden <strong>niet
-        terugbetaald</strong>, behalve wanneer de organisatie zelf de reservering
-        annuleert. De datum blijft 30 minuten voor jou gereserveerd terwijl je betaalt.
-      </div>
+        <label class="akkoord">
+          <input type="checkbox" id="akkoord" required>
+          <span>
+            Ik ga akkoord met het totaalbedrag hierboven en begrijp dat de
+            reservatiekosten van € 60 niet worden terugbetaald, behalve wanneer de
+            organisatie zelf de reservering annuleert — in dat geval wordt het
+            volledige bedrag teruggestort. *
+          </span>
+        </label>
 
-      <label class="akkoord">
-        <input type="checkbox" id="akkoord" required>
-        <span>
-          Ik ga akkoord met het totaalbedrag hierboven en begrijp dat de
-          reservatiekosten van € 60 niet worden terugbetaald, behalve wanneer de
-          organisatie zelf de reservering annuleert — in dat geval wordt het
-          volledige bedrag teruggestort. *
-        </span>
-      </label>
+        <label class="akkoord">
+          <input type="checkbox" id="akkoord-voorwaarden" required>
+          <span>
+            Ik heb de <a href="https://www.8-duust.be/algemene-voorwaarden"
+            target="_blank" rel="noopener">algemene voorwaarden</a> gelezen en
+            goedgekeurd. *
+          </span>
+        </label>
 
-      <label class="akkoord">
-        <input type="checkbox" id="akkoord-voorwaarden" required>
-        <span>
-          Ik heb de <a href="https://www.8-duust.be/algemene-voorwaarden"
-          target="_blank" rel="noopener">algemene voorwaarden</a> gelezen en
-          goedgekeurd. *
-        </span>
-      </label>
+        <p id="formulier-fout" class="formulier-fout verborgen"></p>
 
-      <p id="formulier-fout" class="formulier-fout verborgen"></p>
-
-      <div class="dialoog-knoppen">
-        <button type="button" id="annuleer-knop">Annuleren</button>
-        <button type="submit" id="bevestig-knop" class="primair">Reserveren en € 60 betalen</button>
+        <div class="dialoog-knoppen">
+          <button type="button" id="annuleer-knop">Annuleren</button>
+          <button type="submit" id="bevestig-knop" class="primair">Reserveren en € 60 betalen</button>
+        </div>
       </div>
     </form>
   </dialog>

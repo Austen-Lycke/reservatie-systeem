@@ -672,6 +672,7 @@ function koppelGebeurtenissen() {
     renderKalender();
   });
   document.getElementById('annuleer-knop').addEventListener('click', sluitDialoog);
+  document.getElementById('sluit-knop').addEventListener('click', sluitDialoog);
   // Vangt ook sluiten via Esc af, niet alleen via de annuleerknop.
   dialoogEl.addEventListener('close', stopTypeFeestAnimatie);
   formulierEl.addEventListener('submit', verwerkFormulier);
@@ -700,7 +701,7 @@ async function start() {
     reserveringen = alles;
     renderKalender();
     document.getElementById('live-status').textContent =
-      `Laatst bijgewerkt: ${new Date().toLocaleTimeString('nl-NL')}`;
+      `Live verbonden — laatst bijgewerkt ${new Date().toLocaleTimeString('nl-NL')}`;
   };
 
   const modusBanner = document.getElementById('modus-banner');

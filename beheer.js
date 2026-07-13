@@ -48,9 +48,22 @@ function toon(waarde) {
   return tekst === '' ? '—' : tekst;
 }
 
+function bedrag(waarde) {
+  return `€ ${Number(waarde ?? 0).toLocaleString('nl-BE')}`;
+}
+
+// 'za 18 juli' — voor de statkaart en de komende-lijst.
+function datumKort(datumStr) {
+  const [j, m, d] = datumStr.split('-').map(Number);
+  return new Intl.DateTimeFormat('nl-BE', {
+    weekday: 'short', day: 'numeric', month: 'long'
+  }).format(new Date(j, m - 1, d));
+}
+
 // ---------- Elementen ----------
 
 const foutBannerEl = document.getElementById('fout-banner');
+const foutBannerLoginEl = document.getElementById('fout-banner-login');
 const loginSectieEl = document.getElementById('login-sectie');
 const loginFormulierEl = document.getElementById('login-formulier');
 const loginEmailEl = document.getElementById('login-email');
@@ -63,17 +76,33 @@ const kalenderEl = document.getElementById('kalender');
 const maandTitelEl = document.getElementById('maand-titel');
 const detailPaneelEl = document.getElementById('detail-paneel');
 const detailTitelEl = document.getElementById('detail-titel');
+const detailSubtitelEl = document.getElementById('detail-subtitel');
 const detailLijstEl = document.getElementById('detail-lijst');
+const detailPrijsEl = document.getElementById('detail-prijs');
+const detailVoetEl = document.getElementById('detail-voet');
+const detailBellenEl = document.getElementById('detail-bellen');
+const detailMailenEl = document.getElementById('detail-mailen');
+const statFeestenEl = document.getElementById('stat-feesten');
+const statOntvangenEl = document.getElementById('stat-ontvangen');
+const statVolgendEl = document.getElementById('stat-volgend');
+const statVolgendLabelEl = document.getElementById('stat-volgend-label');
 const komendeLijstEl = document.getElementById('komende-lijst');
 const komendeLeegEl = document.getElementById('komende-leeg');
+const komendeFilterEl = document.getElementById('komende-filter');
 
+// Vóór het inloggen is het portaal (met zijn foutbanner) verborgen; daarom
+// schrijven we fouten ook naar de banner in de inlogkaart.
 function toonFoutBanner(tekst) {
-  foutBannerEl.textContent = tekst;
-  foutBannerEl.classList.remove('verborgen');
+  for (const el of [foutBannerEl, foutBannerLoginEl]) {
+    el.textContent = tekst;
+    el.classList.remove('verborgen');
+  }
 }
 
 function verbergFoutBanner() {
-  foutBannerEl.classList.add('verborgen');
+  for (const el of [foutBannerEl, foutBannerLoginEl]) {
+    el.classList.add('verborgen');
+  }
 }
 
 // ---------- Toestand ----------
@@ -132,43 +161,34 @@ function renderKalender() {
 
 // ---------- Detailpaneel ----------
 
-// Zelfde rijen en volgorde als de bevestigingsmail uit de webhook.
+// Informatieve rijen; type/personen/uren/opbouw staan in de subtitel en de
+// prijsregels in het prijsblok eronder.
 function detailRijen(details) {
-  const opbouwMinuten = Number(details.opbouw_minuten ?? 0);
-  const opbouw = opbouwMinuten > 0
-    ? `${opbouwMinuten} minuten vooraf${details.opbouw_vanaf ? ` (vanaf ${toon(details.opbouw_vanaf)})` : ''}`
-    : 'geen';
-
   const rijen = [
     ['Naam', toon(details.naam)],
     ['E-mail', toon(details.email)],
-    ['Telefoon', toon(details.telefoon)],
-    ['Type feest', toon(details.type_feest)],
-    ['Aantal personen', toon(details.aantal_personen)],
-    ['Uren', `${toon(details.start_tijd)} – ${toon(details.eind_tijd)}`],
-    ['Opbouw', opbouw],
-    ['Opmerkingen', toon(details.opmerkingen)]
+    ['Telefoon', toon(details.telefoon)]
   ];
 
   const keuzes = details.extra_opties?.keuzes;
   if (keuzes) {
     const drankkaarten = keuzes.drankkaarten ?? {};
+    let drankkaartTekst = DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—';
+    if (drankkaarten.aantal) {
+      const perKaart = drankkaarten.keuze === 'vooraf12' ? 12 : 20;
+      drankkaartTekst = `Vooraf — ${drankkaarten.aantal} × € ${perKaart}`;
+    }
     rijen.push(
-      ['Eigen foodtruck', keuzes.eigenFoodtruck ? 'Ja (forfait € 25)' : 'Nee'],
-      ['BBQ zelf meebrengen', keuzes.bbq ? 'Ja' : 'Nee'],
-      ['Drankkaarten', DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—'],
+      ['Drankkaarten', drankkaartTekst],
       ['Muziek', MUZIEK_LABELS[String(keuzes.muziek)] ?? '—'],
-      ['Springkasteel', SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—']
+      ['Springkasteel', SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—'],
+      ['Foodtruck / BBQ', `${keuzes.eigenFoodtruck ? 'Ja' : 'Nee'} / ${keuzes.bbq ? 'Ja' : 'Nee'}`]
     );
+    if (keuzes.foodtruckVzw && keuzes.foodtruckVzw.gekozen) {
+      rijen.push(['Foodtruck vzw', 'Ja — zie prijsregels']);
+    }
   }
-  for (const regel of details.extra_opties?.prijsregels ?? []) {
-    rijen.push([toon(regel.label), `€ ${Number(regel.bedrag)}`]);
-  }
-  rijen.push(['Totaal betaald', `€ ${Number(details.totaal_bedrag ?? 60)}`]);
-  rijen.push(['Mollie-betaling', toon(details.mollie_betaling_id)]);
-  if (details.aangemaakt_op) {
-    rijen.push(['Geboekt op', new Date(details.aangemaakt_op).toLocaleString('nl-BE')]);
-  }
+  rijen.push(['Opmerkingen', toon(details.opmerkingen)]);
   return rijen;
 }
 
@@ -178,28 +198,94 @@ function toonDetails(datumStr) {
   geselecteerdeDatum = datumStr;
 
   detailTitelEl.textContent = datumMooi(datumStr);
+
+  const opbouwMinuten = Number(details.opbouw_minuten ?? 0);
+  const subtitel = [
+    toon(details.type_feest),
+    `${toon(details.aantal_personen)} personen`,
+    `${toon(details.start_tijd)}–${toon(details.eind_tijd)}`
+  ];
+  if (opbouwMinuten > 0 && details.opbouw_vanaf) {
+    subtitel.push(`opbouw vanaf ${details.opbouw_vanaf}`);
+  }
+  detailSubtitelEl.textContent = subtitel.join(' · ');
+
   detailLijstEl.innerHTML = '';
   for (const [label, waarde] of detailRijen(details)) {
-    const dt = document.createElement('dt');
-    dt.textContent = label;
-    const dd = document.createElement('dd');
+    const rij = document.createElement('div');
+    rij.className = 'detail-rij';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'label';
+    labelEl.textContent = label;
+    const waardeEl = document.createElement('span');
+    waardeEl.className = 'waarde';
     // E-mail en telefoon als klikbare links, de rest als platte tekst.
     if (label === 'E-mail' && waarde !== '—') {
       const a = document.createElement('a');
       a.href = `mailto:${waarde}`;
       a.textContent = waarde;
-      dd.appendChild(a);
+      waardeEl.appendChild(a);
     } else if (label === 'Telefoon' && waarde !== '—') {
       const a = document.createElement('a');
       a.href = `tel:${waarde.replace(/\s/g, '')}`;
       a.textContent = waarde;
-      dd.appendChild(a);
+      waardeEl.appendChild(a);
     } else {
-      dd.textContent = waarde;
+      waardeEl.textContent = waarde;
     }
-    detailLijstEl.appendChild(dt);
-    detailLijstEl.appendChild(dd);
+    rij.appendChild(labelEl);
+    rij.appendChild(waardeEl);
+    detailLijstEl.appendChild(rij);
   }
+
+  // Prijsblok: de door de server opgeslagen prijsregels plus het totaal.
+  detailPrijsEl.innerHTML = '';
+  const regels = details.extra_opties?.prijsregels ??
+    [{ label: 'Reservatiekosten', bedrag: 60 }];
+  for (const regel of regels) {
+    const rij = document.createElement('div');
+    rij.className = 'prijs-regel';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'label';
+    labelEl.textContent = toon(regel.label);
+    const bedragEl = document.createElement('span');
+    bedragEl.textContent = bedrag(regel.bedrag);
+    rij.appendChild(labelEl);
+    rij.appendChild(bedragEl);
+    detailPrijsEl.appendChild(rij);
+  }
+  const totaalRij = document.createElement('div');
+  totaalRij.className = 'prijs-totaal';
+  const totaalLabel = document.createElement('span');
+  totaalLabel.className = 'label';
+  totaalLabel.textContent = 'Totaal betaald';
+  const totaalBedrag = document.createElement('span');
+  totaalBedrag.className = 'bedrag';
+  totaalBedrag.textContent = bedrag(details.totaal_bedrag ?? 60);
+  totaalRij.appendChild(totaalLabel);
+  totaalRij.appendChild(totaalBedrag);
+  detailPrijsEl.appendChild(totaalRij);
+
+  // Voetnoot: betalings-ID en boekingsmoment.
+  detailVoetEl.innerHTML = '';
+  const mollieEl = document.createElement('span');
+  mollieEl.textContent = `Mollie-betaling ${toon(details.mollie_betaling_id)}`;
+  detailVoetEl.appendChild(mollieEl);
+  if (details.aangemaakt_op) {
+    const geboektEl = document.createElement('span');
+    geboektEl.textContent =
+      `Geboekt op ${new Date(details.aangemaakt_op).toLocaleString('nl-BE')}`;
+    detailVoetEl.appendChild(geboektEl);
+  }
+
+  // Snelknoppen (zichtbaar op mobiel).
+  const telefoon = String(details.telefoon ?? '').trim();
+  detailBellenEl.href = telefoon ? `tel:${telefoon.replace(/\s/g, '')}` : '#';
+  detailBellenEl.classList.toggle('verborgen', !telefoon);
+  const email = String(details.email ?? '').trim();
+  detailMailenEl.href = email ? `mailto:${email}` : '#';
+  detailMailenEl.classList.toggle('verborgen', !email);
+
   detailPaneelEl.classList.remove('verborgen');
 
   // Kalender opnieuw tekenen zodat de geselecteerde dag oplicht, en het
@@ -208,30 +294,114 @@ function toonDetails(datumStr) {
   detailPaneelEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+// ---------- Statistieken ----------
+
+function renderStatistieken() {
+  const nu = new Date();
+  const maandPrefix = datumNaarString(nu).slice(0, 7);
+  const dezeMaand = Object.values(reserveringen)
+    .filter((r) => String(r.datum).startsWith(maandPrefix));
+  statFeestenEl.textContent = String(dezeMaand.length);
+  statOntvangenEl.textContent =
+    bedrag(dezeMaand.reduce((som, r) => som + Number(r.totaal_bedrag ?? 60), 0));
+
+  const vandaag = datumNaarString(nu);
+  const volgende = Object.keys(reserveringen).filter((d) => d >= vandaag).sort()[0];
+  if (!volgende) {
+    statVolgendLabelEl.textContent = 'Volgend feest';
+    statVolgendEl.textContent = 'Nog niets gepland';
+    return;
+  }
+  const [j, m, d] = volgende.split('-').map(Number);
+  const dagen = Math.round(
+    (new Date(j, m - 1, d) - new Date(nu.getFullYear(), nu.getMonth(), nu.getDate())) / 86400000
+  );
+  const wanneer = dagen === 0 ? 'vandaag' : dagen === 1 ? 'morgen' : `over ${dagen} dagen`;
+  statVolgendLabelEl.textContent = `Volgend feest — ${wanneer}`;
+
+  const details = reserveringen[volgende];
+  statVolgendEl.textContent = `${datumKort(volgende)} — ${toon(details.type_feest)}`;
+  const sub = document.createElement('div');
+  sub.className = 'stat-sub';
+  sub.textContent =
+    `${toon(details.aantal_personen)} pers. · ${toon(details.start_tijd)}–${toon(details.eind_tijd)}`;
+  statVolgendEl.appendChild(sub);
+}
+
 // ---------- Komende reservaties ----------
+
+let komendeFilter = 'alle'; // 'alle' of 'JJJJ-MM'
 
 function renderKomendeLijst() {
   const vandaag = datumNaarString(new Date());
   const komende = Object.keys(reserveringen).filter((d) => d >= vandaag).sort();
 
-  komendeLijstEl.innerHTML = '';
-  komendeLeegEl.classList.toggle('verborgen', komende.length > 0);
+  // Maandfilter opnieuw vullen met de maanden waarin iets gepland staat.
+  const maanden = [...new Set(komende.map((d) => d.slice(0, 7)))];
+  if (komendeFilter !== 'alle' && !maanden.includes(komendeFilter)) {
+    komendeFilter = 'alle';
+  }
+  komendeFilterEl.innerHTML = '';
+  const alleOptie = document.createElement('option');
+  alleOptie.value = 'alle';
+  alleOptie.textContent = 'Alle maanden';
+  komendeFilterEl.appendChild(alleOptie);
+  for (const maand of maanden) {
+    const optie = document.createElement('option');
+    optie.value = maand;
+    const [j, m] = maand.split('-').map(Number);
+    optie.textContent = `${MAANDEN[m - 1]} ${j}`;
+    komendeFilterEl.appendChild(optie);
+  }
+  komendeFilterEl.value = komendeFilter;
 
-  for (const datumStr of komende) {
+  const zichtbaar = komende.filter(
+    (d) => komendeFilter === 'alle' || d.startsWith(komendeFilter)
+  );
+  komendeLijstEl.innerHTML = '';
+  komendeLeegEl.classList.toggle('verborgen', zichtbaar.length > 0);
+
+  for (const datumStr of zichtbaar) {
     const details = reserveringen[datumStr];
-    const li = document.createElement('li');
     const knop = document.createElement('button');
     knop.type = 'button';
-    knop.className = 'komende-knop';
-    knop.textContent =
-      `${datumMooi(datumStr)} — ${toon(details.type_feest)}, ${toon(details.naam)}` +
-      ` (${toon(details.aantal_personen)} pers., ${toon(details.start_tijd)}–${toon(details.eind_tijd)})`;
+    knop.className = 'komende-rij';
+
+    const datumBlok = document.createElement('span');
+    datumBlok.className = 'komende-datum';
+    const dagNr = document.createElement('span');
+    dagNr.className = 'dag-nr';
+    dagNr.textContent = String(Number(datumStr.slice(8, 10)));
+    const maandKort = document.createElement('span');
+    maandKort.className = 'maand-kort';
+    maandKort.textContent = MAANDEN[Number(datumStr.slice(5, 7)) - 1].slice(0, 3);
+    datumBlok.appendChild(dagNr);
+    datumBlok.appendChild(maandKort);
+
+    const info = document.createElement('span');
+    info.className = 'komende-info';
+    const titel = document.createElement('span');
+    titel.className = 'komende-titel';
+    titel.textContent = `${toon(details.type_feest)} — ${toon(details.naam)}`;
+    const meta = document.createElement('span');
+    meta.className = 'komende-meta';
+    meta.textContent =
+      `${toon(details.aantal_personen)} pers. · ${toon(details.start_tijd)}–${toon(details.eind_tijd)}`;
+    info.appendChild(titel);
+    info.appendChild(meta);
+
+    const bedragEl = document.createElement('span');
+    bedragEl.className = 'komende-bedrag';
+    bedragEl.textContent = bedrag(details.totaal_bedrag ?? 60);
+
+    knop.appendChild(datumBlok);
+    knop.appendChild(info);
+    knop.appendChild(bedragEl);
     knop.addEventListener('click', () => {
       getoondeMaand = new Date(Number(datumStr.slice(0, 4)), Number(datumStr.slice(5, 7)) - 1, 1);
       toonDetails(datumStr);
     });
-    li.appendChild(knop);
-    komendeLijstEl.appendChild(li);
+    komendeLijstEl.appendChild(knop);
   }
 }
 
@@ -253,6 +423,7 @@ async function laadReserveringen() {
   for (const rij of data) reserveringen[rij.datum] = rij;
   renderKalender();
   renderKomendeLijst();
+  renderStatistieken();
   if (geselecteerdeDatum && reserveringen[geselecteerdeDatum]) {
     toonDetails(geselecteerdeDatum);
   }
@@ -355,6 +526,10 @@ async function init() {
   document.getElementById('volgende-maand').addEventListener('click', () => {
     getoondeMaand = new Date(getoondeMaand.getFullYear(), getoondeMaand.getMonth() + 1, 1);
     renderKalender();
+  });
+  komendeFilterEl.addEventListener('change', () => {
+    komendeFilter = komendeFilterEl.value;
+    renderKomendeLijst();
   });
 
   // Bij het laden van de pagina én na het aanklikken van de magic link.
