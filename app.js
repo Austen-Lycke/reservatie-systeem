@@ -318,6 +318,16 @@ function vandaagString() {
   return datumNaarString(new Date());
 }
 
+// Reserveren moet minstens 2 dagen op voorhand: vandaag en morgen zijn te
+// kort dag om het feest voor te bereiden. De server hanteert dezelfde grens.
+const MIN_DAGEN_VOORUIT = 2;
+
+function eersteBoekbareDatumString() {
+  const d = new Date();
+  d.setDate(d.getDate() + MIN_DAGEN_VOORUIT);
+  return datumNaarString(d);
+}
+
 function renderKalender() {
   const jaar = getoondeMaand.getFullYear();
   const maand = getoondeMaand.getMonth();
@@ -341,6 +351,7 @@ function renderKalender() {
   }
 
   const vandaag = vandaagString();
+  const eersteBoekbaar = eersteBoekbareDatumString();
   for (let dag = 1; dag <= dagenInMaand; dag++) {
     const datumStr = datumNaarString(new Date(jaar, maand, dag));
     const cel = document.createElement('div');
@@ -350,6 +361,9 @@ function renderKalender() {
     if (datumStr < vandaag) {
       cel.className = 'dag niet-beschikbaar';
       cel.title = 'Deze datum is voorbij';
+    } else if (datumStr < eersteBoekbaar) {
+      cel.className = 'dag niet-beschikbaar';
+      cel.title = 'Te kort dag — reserveren kan tot uiterlijk 2 dagen vooraf';
     } else if (status === STATUS_BETAALD) {
       cel.className = 'dag bezet';
       cel.title = 'Bezet';

@@ -29,6 +29,18 @@ function isWeekdag(datum: string): boolean {
   return dag >= 1 && dag <= 4;
 }
 
+// Reserveren moet minstens 2 dagen op voorhand: vandaag en morgen zijn te
+// kort dag om het feest voor te bereiden. "Vandaag" volgens Belgische tijd,
+// want de server draait in UTC.
+const MIN_DAGEN_VOORUIT = 2;
+
+function eersteBoekbareDatum(): string {
+  const vandaagBrussel = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Brussels' });
+  const d = new Date(`${vandaagBrussel}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + MIN_DAGEN_VOORUIT);
+  return d.toISOString().slice(0, 10);
+}
+
 type Prijsregel = { label: string; bedrag: number };
 
 function geldigAantal(n: unknown): n is number {
@@ -159,6 +171,11 @@ Deno.serve(async (req) => {
   const datum = String(invoer.datum ?? '');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(datum)) {
     return antwoord(400, { fout: 'Ongeldige datum.' });
+  }
+  if (datum < eersteBoekbareDatum()) {
+    return antwoord(400, {
+      fout: 'Reserveren kan tot uiterlijk 2 dagen vooraf. Kies een latere datum, of bel ons voor een last-minute vraag.'
+    });
   }
 
   const weekdag = isWeekdag(datum);
