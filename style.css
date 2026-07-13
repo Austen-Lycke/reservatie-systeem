@@ -23,6 +23,12 @@
   --dag-vrij: #eceae4;
   --dag-vrij-tekst: #b3afa5;
   --zacht: #faf9f6;
+
+  /* Micro-animaties: één gedeelde beweegtaal voor de hele site. */
+  --vloeiend: cubic-bezier(0.32, 0.72, 0, 1);
+  --duur-kort: 150ms;
+  --duur-normaal: 250ms;
+  --duur-lang: 320ms;
 }
 
 * { box-sizing: border-box; }
@@ -209,8 +215,14 @@ a:hover { color: #000; }
   border: 1px solid #f0dfad;
   margin-bottom: 16px;
   font-size: 13.5px;
+  animation: verschijn var(--duur-normaal) var(--vloeiend);
 }
 .banner-fout { background: #fdeeed; border-color: #f2c4c1; }
+
+/* Zachte entree voor meldingen die tevoorschijn komen (banners, fouten). */
+@keyframes verschijn {
+  from { opacity: 0; transform: translateY(-4px); }
+}
 
 .toast {
   position: fixed;
@@ -224,6 +236,17 @@ a:hover { color: #000; }
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   max-width: 90vw;
   font-size: 13.5px;
+  transition: opacity var(--duur-lang) var(--vloeiend),
+              transform var(--duur-lang) var(--vloeiend),
+              visibility var(--duur-lang);
+}
+/* Eigen verborgen-klasse (geen display:none) zodat de toast omhoog kan
+   glijden bij tonen en omlaag kan vervagen bij verdwijnen. */
+.toast.toast-verborgen {
+  opacity: 0;
+  transform: translateX(-50%) translateY(12px);
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* ---------- Kalender ---------- */
@@ -286,10 +309,16 @@ a:hover { color: #000; }
   color: #fff;
   cursor: pointer;
 }
+.dag.beschikbaar {
+  transition: background-color var(--duur-kort) var(--vloeiend),
+              transform var(--duur-kort) var(--vloeiend);
+}
 .dag.beschikbaar:hover, .dag.beschikbaar:focus-visible {
   background: var(--groen-donker);
   outline: 2px solid var(--groen-diep);
 }
+.dag.beschikbaar:hover { transform: scale(1.06); }
+.dag.beschikbaar:active { transform: scale(0.95); }
 .dag.bezet,
 .legenda-blok.bezet {
   background: var(--rood);
@@ -308,6 +337,17 @@ a:hover { color: #000; }
   color: var(--dag-vrij-tekst);
 }
 .dag.vandaag { box-shadow: inset 0 0 0 2px var(--inkt); }
+
+/* Bij het bladeren tussen maanden schuift de nieuwe maand zachtjes binnen
+   in de bladerrichting (klassen worden gezet in app.js). */
+.kalender.wissel-vooruit { animation: wissel-vooruit var(--duur-normaal) var(--vloeiend); }
+.kalender.wissel-terug { animation: wissel-terug var(--duur-normaal) var(--vloeiend); }
+@keyframes wissel-vooruit {
+  from { opacity: 0; transform: translateX(18px); }
+}
+@keyframes wissel-terug {
+  from { opacity: 0; transform: translateX(-18px); }
+}
 
 .legenda {
   display: flex;
@@ -348,8 +388,36 @@ dialog {
   max-height: 90vh;
   overflow-y: auto;
   color: var(--inkt);
+  /* Open/dicht met een zachte schaal- en vervaagbeweging. In browsers zonder
+     @starting-style/allow-discrete verschijnt de dialoog gewoon direct. */
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity var(--duur-lang) var(--vloeiend),
+              transform var(--duur-lang) var(--vloeiend),
+              display var(--duur-lang) allow-discrete,
+              overlay var(--duur-lang) allow-discrete;
 }
-dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
+dialog:not([open]) {
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+}
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+}
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 1;
+  transition: opacity var(--duur-lang) var(--vloeiend),
+              display var(--duur-lang) allow-discrete,
+              overlay var(--duur-lang) allow-discrete;
+}
+dialog:not([open])::backdrop { opacity: 0; }
+@starting-style {
+  dialog[open]::backdrop { opacity: 0; }
+}
 
 /* Geen scrollende pagina achter een open dialoog. */
 body:has(dialog[open]) { overflow: hidden; }
@@ -424,10 +492,13 @@ body:has(dialog[open]) { overflow: hidden; }
   font-size: 14px;
   background: var(--kaart);
   color: var(--inkt);
+  transition: border-color var(--duur-kort) var(--vloeiend),
+              box-shadow var(--duur-kort) var(--vloeiend);
 }
 .veld input:focus, .veld select:focus, .veld textarea:focus {
   border-color: var(--groen);
   outline: none;
+  box-shadow: 0 0 0 3px rgba(46, 158, 79, 0.15);
 }
 .veld textarea { resize: vertical; }
 .veld small, .extra-detail small {
@@ -479,7 +550,12 @@ body:has(dialog[open]) { overflow: hidden; }
   font-size: 13px;
   color: var(--grijs);
   cursor: pointer;
+  transition: border-color var(--duur-kort) var(--vloeiend),
+              background-color var(--duur-kort) var(--vloeiend),
+              color var(--duur-kort) var(--vloeiend),
+              transform var(--duur-kort) var(--vloeiend);
 }
+.pil:active { transform: scale(0.96); }
 .pil input {
   position: absolute;
   opacity: 0;
@@ -510,14 +586,44 @@ body:has(dialog[open]) { overflow: hidden; }
 .keuze-kolom input { accent-color: var(--groen); }
 .keuze-kolom label:has(input:checked) { font-weight: 600; }
 
+/* Detailblokken klappen vloeiend open en dicht via de grid-rows-truc:
+   de buitenkant animeert van 0fr naar 1fr, de binnenkant (.klap-inhoud)
+   knipt de inhoud af. Padding staat op de binnenkant en animeert mee,
+   anders blijft het dichtgeklapte blok padding-hoog. */
 .extra-detail {
+  display: grid;
+  grid-template-rows: 1fr;
   margin-top: 10px;
-  padding: 10px 12px;
-  background: var(--zacht);
-  border-radius: 10px;
+  opacity: 1;
   font-size: 12.5px;
   color: var(--grijs);
   line-height: 1.5;
+  transition: grid-template-rows var(--duur-lang) var(--vloeiend),
+              opacity var(--duur-normaal) var(--vloeiend),
+              margin-top var(--duur-lang) var(--vloeiend),
+              visibility var(--duur-lang);
+}
+.extra-detail > .klap-inhoud {
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 12px;
+  background: var(--zacht);
+  border-radius: 10px;
+  transform: translateY(0);
+  transition: padding-top var(--duur-lang) var(--vloeiend),
+              padding-bottom var(--duur-lang) var(--vloeiend),
+              transform var(--duur-lang) var(--vloeiend);
+}
+.extra-detail.ingeklapt {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin-top: 0;
+  visibility: hidden; /* dichtgeklapt: niet focusbaar/voorleesbaar */
+}
+.extra-detail.ingeklapt > .klap-inhoud {
+  padding-top: 0;
+  padding-bottom: 0;
+  transform: translateY(-4px);
 }
 .extra-detail strong { color: var(--inkt); }
 .gerecht-rij {
@@ -535,8 +641,14 @@ body:has(dialog[open]) { overflow: hidden; }
   font: inherit;
   font-size: 13px;
   width: 100%;
+  transition: border-color var(--duur-kort) var(--vloeiend),
+              box-shadow var(--duur-kort) var(--vloeiend);
 }
-.gerecht-rij input:focus { border-color: var(--groen); outline: none; }
+.gerecht-rij input:focus {
+  border-color: var(--groen);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(46, 158, 79, 0.15);
+}
 
 /* Prijsoverzicht */
 .prijs-info {
@@ -569,6 +681,12 @@ body:has(dialog[open]) { overflow: hidden; }
   font-size: 20px;
   font-weight: 700;
   color: var(--groen-diep);
+  display: inline-block; /* nodig om te kunnen schalen bij de prijs-pop */
+}
+/* Kleine 'pop' wanneer het totaalbedrag verandert (klasse via app.js). */
+.prijs-totaal-rij strong.pop { animation: prijs-pop var(--duur-normaal) var(--vloeiend); }
+@keyframes prijs-pop {
+  50% { transform: scale(1.1); }
 }
 .prijs-info p {
   font-size: 12px;
@@ -598,6 +716,7 @@ body:has(dialog[open]) { overflow: hidden; }
   padding: 10px 14px;
   font-size: 13px;
   margin: 0;
+  animation: verschijn var(--duur-normaal) var(--vloeiend);
 }
 
 .dialoog-knoppen {
@@ -677,8 +796,14 @@ body:has(dialog[open]) { overflow: hidden; }
   border-radius: 10px;
   font: inherit;
   font-size: 14px;
+  transition: border-color var(--duur-kort) var(--vloeiend),
+              box-shadow var(--duur-kort) var(--vloeiend);
 }
-.login-formulier input:focus { border-color: var(--groen); outline: none; }
+.login-formulier input:focus {
+  border-color: var(--groen);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(46, 158, 79, 0.15);
+}
 .login-formulier button {
   margin-top: 14px;
   min-height: 46px;
@@ -936,6 +1061,36 @@ body:has(dialog[open]) { overflow: hidden; }
   margin: 0;
   font-size: 13.5px;
   color: var(--grijs-licht);
+}
+
+/* ---------- Micro-animaties: knoppen en aanraakfeedback ---------- */
+
+/* Alle knopachtige elementen krijgen dezelfde vloeiende kleurovergang en
+   een lichte 'indruk' bij het klikken. */
+.knop-groen, .kalender-kop button, .dialoog-sluit, .dialoog-knoppen button,
+.beheer-balk button, .komende-rij, .detail-acties a, .topbalk-telefoon {
+  transition: background-color var(--duur-kort) var(--vloeiend),
+              border-color var(--duur-kort) var(--vloeiend),
+              color var(--duur-kort) var(--vloeiend),
+              transform var(--duur-kort) var(--vloeiend);
+}
+.knop-groen:active,
+.kalender-kop button:not(:disabled):active,
+.dialoog-sluit:active,
+.dialoog-knoppen button:not(:disabled):active,
+.beheer-balk button:active,
+.komende-rij:active,
+.detail-acties a:active {
+  transform: scale(0.97);
+}
+
+/* Wie liever geen beweging ziet, krijgt alles direct. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 /* ---------- Responsief ---------- */

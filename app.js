@@ -447,6 +447,12 @@ let typeFeestTimer = null;
 
 function startTypeFeestAnimatie() {
   const veld = document.getElementById('type-feest');
+  // Wie liever geen beweging ziet, krijgt een vaste placeholder.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    stopTypeFeestAnimatie();
+    veld.placeholder = `bv. ${TYPE_FEEST_VOORBEELDEN[0]}`;
+    return;
+  }
   let woordIndex = 0;
   let positie = 0;
   let wissen = false;
@@ -483,15 +489,17 @@ function stopTypeFeestAnimatie() {
 // ---------- Extra opties ----------
 
 // Toont of verbergt de detailblokken op basis van de gekozen radio's.
-// Elk blok draagt data-toon-bij="veldnaam=waarde1|waarde2". Velden in een
-// verborgen blok worden ook uitgeschakeld, zodat verlaten waarden (bv. eerst
-// gerechten invullen en dan toch "nee" kiezen) nooit meetellen of meegaan.
+// Elk blok draagt data-toon-bij="veldnaam=waarde1|waarde2". De klasse
+// 'ingeklapt' laat het blok vloeiend open- en dichtklappen (zie style.css).
+// Velden in een dichtgeklapt blok worden ook uitgeschakeld, zodat verlaten
+// waarden (bv. eerst gerechten invullen en dan toch "nee" kiezen) nooit
+// meetellen of meegaan.
 function werkExtraDetailsBij() {
   for (const blok of formulierEl.querySelectorAll('.extra-detail')) {
     const [naam, waarden] = blok.dataset.toonBij.split('=');
     const huidig = formulierEl.elements[naam]?.value;
     const zichtbaar = waarden.split('|').includes(huidig);
-    blok.classList.toggle('verborgen', !zichtbaar);
+    blok.classList.toggle('ingeklapt', !zichtbaar);
     for (const veld of blok.querySelectorAll('input')) veld.disabled = !zichtbaar;
   }
 }
@@ -529,13 +537,24 @@ function berekenPrijsregels() {
 }
 
 // Werkt de prijsregels, het totaal en het knoplabel bij; geeft het totaal terug.
+// Verandert het totaal terwijl de dialoog open is, dan 'popt' het bedrag even
+// (niet bij het openen zelf: openDialoog zet vorigTotaal eerst op null).
+let vorigTotaal = null;
+
 function werkTotaalBij() {
   const regels = berekenPrijsregels();
   const totaal = regels.reduce((som, regel) => som + regel.bedrag, 0);
   document.getElementById('prijs-regels').innerHTML = regels
     .map((regel) => `<div><span>${regel.label}</span><span>€ ${regel.bedrag}</span></div>`)
     .join('');
-  document.getElementById('prijs-totaal').textContent = `€ ${totaal}`;
+  const totaalEl = document.getElementById('prijs-totaal');
+  totaalEl.textContent = `€ ${totaal}`;
+  if (vorigTotaal !== null && totaal !== vorigTotaal) {
+    totaalEl.classList.remove('pop');
+    void totaalEl.offsetWidth; // herstart de animatie
+    totaalEl.classList.add('pop');
+  }
+  vorigTotaal = totaal;
   const knop = document.getElementById('bevestig-knop');
   if (!knop.disabled) knop.textContent = `Reserveren en € ${totaal} betalen`;
   return totaal;
@@ -613,6 +632,7 @@ function openDialoog(datumStr) {
   weekdagBoeking = isWeekdag(datumStr);
   document.getElementById('dialoog-datum').textContent = datumMooi(datumStr);
   formulierEl.reset();
+  vorigTotaal = null; // geen prijs-pop bij het openen van de dialoog
   verbergFormulierFout();
   pasWeekdagRegelsToe();
   vulStartTijden();
@@ -642,9 +662,9 @@ function verbergFormulierFout() {
 
 function toonToast(tekst) {
   toastEl.textContent = tekst;
-  toastEl.classList.remove('verborgen');
+  toastEl.classList.remove('toast-verborgen');
   clearTimeout(toonToast.timer);
-  toonToast.timer = setTimeout(() => toastEl.classList.add('verborgen'), 6000);
+  toonToast.timer = setTimeout(() => toastEl.classList.add('toast-verborgen'), 6000);
 }
 
 function toonFoutBanner(tekst) {
@@ -771,14 +791,24 @@ async function verwerkBetalingsTerugkeer(datum) {
     'zodra de betaling bevestigd is.');
 }
 
+// Laat de kalender kort invegen in de bladerrichting. Alleen bij handmatig
+// bladeren — niet bij live updates of de minuutlijkse hertekening.
+function animeerMaandWissel(richting) {
+  kalenderEl.classList.remove('wissel-vooruit', 'wissel-terug');
+  void kalenderEl.offsetWidth; // herstart de animatie
+  kalenderEl.classList.add(richting > 0 ? 'wissel-vooruit' : 'wissel-terug');
+}
+
 function koppelGebeurtenissen() {
   document.getElementById('vorige-maand').addEventListener('click', () => {
     getoondeMaand = new Date(getoondeMaand.getFullYear(), getoondeMaand.getMonth() - 1, 1);
     renderKalender();
+    animeerMaandWissel(-1);
   });
   document.getElementById('volgende-maand').addEventListener('click', () => {
     getoondeMaand = new Date(getoondeMaand.getFullYear(), getoondeMaand.getMonth() + 1, 1);
     renderKalender();
+    animeerMaandWissel(1);
   });
   document.getElementById('annuleer-knop').addEventListener('click', sluitDialoog);
   document.getElementById('sluit-knop').addEventListener('click', sluitDialoog);

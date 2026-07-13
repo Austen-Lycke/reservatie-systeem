@@ -179,20 +179,24 @@
               <label class="pil"><input type="radio" name="foodtruckVzw" value="ja"> Ja</label>
               <label class="pil"><input type="radio" name="foodtruckVzw" value="nee" checked> Nee</label>
             </div>
-            <div class="extra-detail verborgen" data-toon-bij="foodtruckVzw=ja">
-              <div class="gerecht-rij">
-                <label for="ft-frikandel">Frietjes met frikandel en saus — € 7,00 p.p.</label>
-                <input type="number" id="ft-frikandel" min="0" max="500" placeholder="0">
+            <div class="extra-detail ingeklapt" data-toon-bij="foodtruckVzw=ja">
+              <div class="klap-inhoud">
+                <div class="gerecht-rij">
+                  <label for="ft-frikandel">Frietjes met frikandel en saus — € 7,00 p.p.</label>
+                  <input type="number" id="ft-frikandel" min="0" max="500" placeholder="0">
+                </div>
+                <div class="gerecht-rij">
+                  <label for="ft-hamburger">Hamburger met frietjes en saus — € 8,00 p.p.</label>
+                  <input type="number" id="ft-hamburger" min="0" max="500" placeholder="0">
+                </div>
+                <div class="gerecht-rij">
+                  <label for="ft-pita">Pita met saus — € 6,00 p.p.</label>
+                  <input type="number" id="ft-pita" min="0" max="500" placeholder="0">
+                </div>
+                <small>Vul per gerecht het aantal personen in.</small>
+                <br>
+                <small>De frietjes en hamburgers zijn à volonté!</small>
               </div>
-              <div class="gerecht-rij">
-                <label for="ft-hamburger">Hamburger met frietjes en saus — € 8,00 p.p.</label>
-                <input type="number" id="ft-hamburger" min="0" max="500" placeholder="0">
-              </div>
-              <div class="gerecht-rij">
-                <label for="ft-pita">Pita met saus — € 6,00 p.p.</label>
-                <input type="number" id="ft-pita" min="0" max="500" placeholder="0">
-              </div>
-              <small>Vul per gerecht het aantal personen in.</small>
             </div>
           </div>
 
@@ -202,9 +206,11 @@
               <label class="pil"><input type="radio" name="eigenFoodtruck" value="ja"> Ja</label>
               <label class="pil"><input type="radio" name="eigenFoodtruck" value="nee" checked> Nee</label>
             </div>
-            <div class="extra-detail verborgen" data-toon-bij="eigenFoodtruck=ja">
-              Forfait <strong>€ 25,00</strong> voor elektriciteit, water, kabels en
-              afvalverwerking — wordt bij het totaal geteld.
+            <div class="extra-detail ingeklapt" data-toon-bij="eigenFoodtruck=ja">
+              <div class="klap-inhoud">
+                Forfait <strong>€ 25,00</strong> voor elektriciteit, water, kabels en
+                afvalverwerking — wordt bij het totaal geteld.
+              </div>
             </div>
           </div>
 
@@ -274,7 +280,7 @@
     </form>
   </dialog>
 
-  <div id="toast" class="toast verborgen"></div>
+  <div id="toast" class="toast toast-verborgen"></div>
 
   <!-- Zelf-gehoste kopie van @supabase/supabase-js (vaste versie) in plaats
        van een externe CDN: zo kan een gecompromitteerde CDN nooit code op
