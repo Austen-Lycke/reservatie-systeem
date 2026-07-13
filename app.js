@@ -6,6 +6,12 @@ const MAANDEN = [
 ];
 const MIN_STARTTIJD = '10:00'; // reserveren kan ten vroegste vanaf 10:00
 const MAX_EINDTIJD = '02:00'; // uiterlijk 02:00 's nachts (na middernacht)
+// Maandag t/m donderdag gelden strengere regels: enkel teambuildings of
+// vergaderingen, tussen 10:00 en 18:00, zonder muziek, vanaf 15 personen.
+// De server (edge function + databasefunctie) dwingt dezelfde regels af.
+const WEEKDAG_EINDTIJD = '18:00';
+const WEEKDAG_MIN_PERSONEN = 15;
+const WEEKEND_MIN_PERSONEN = 25;
 const TYPE_FEEST_VOORBEELDEN = [
   'lentefeest', 'communie', 'verjaardag', 'pensioenviering',
   'sweet sixteen', 'sweet eighteen', 'personeelsfeest', 'bijeenkomst'
@@ -22,8 +28,6 @@ const PRIJZEN = {
   hamburgerFrietjes: 8,   // per persoon
   pita: 6,                // per persoon
   eigenFoodtruck: 25,     // forfait stroom/water/kabels/afval
-  drankkaartVooraf20: 20, // per kaart
-  drankkaartVooraf12: 12, // per kaart
   springkasteelEigenLeverancier: 15 // forfait stroom/kabels
 };
 
@@ -42,6 +46,15 @@ function datumMooi(datumStr) {
   }).format(new Date(j, m - 1, d));
 }
 
+// Maandag t/m donderdag (weekend = vrijdag t/m zondag). De datum wordt uit
+// zijn onderdelen opgebouwd, net als in de kalender, zodat de tijdzone geen
+// rol speelt.
+function isWeekdag(datumStr) {
+  const [j, m, d] = datumStr.split('-').map(Number);
+  const dag = new Date(j, m - 1, d).getDay();
+  return dag >= 1 && dag <= 4;
+}
+
 function tijdNaarMinuten(t) {
   const [uur, min] = t.split(':').map(Number);
   return uur * 60 + min;
@@ -54,16 +67,20 @@ function minutenNaarTijd(totaal) {
   return `${uur}:${min}`;
 }
 
-// Vult de starttijd-dropdown met kwartieren (10:00 t/m 23:45).
+// Vult de starttijd-dropdown met kwartieren: 10:00 t/m 23:45, op weekdagen
+// (ma-do) 10:00 t/m 17:45. Wordt bij elke dialoogopening opnieuw opgebouwd
+// omdat de gekozen datum de reeks bepaalt.
 function vulStartTijden() {
   const select = document.getElementById('start-tijd');
+  select.innerHTML = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
   placeholder.disabled = true;
   placeholder.defaultSelected = true;
   placeholder.textContent = 'Kies een tijd';
   select.appendChild(placeholder);
-  for (let m = tijdNaarMinuten(MIN_STARTTIJD); m < 24 * 60; m += 15) {
+  const tot = weekdagBoeking ? tijdNaarMinuten(WEEKDAG_EINDTIJD) : 24 * 60;
+  for (let m = tijdNaarMinuten(MIN_STARTTIJD); m < tot; m += 15) {
     const optie = document.createElement('option');
     optie.value = optie.textContent = minutenNaarTijd(m);
     select.appendChild(optie);
@@ -71,7 +88,8 @@ function vulStartTijden() {
 }
 
 // Vult de eindtijd-dropdown: van een kwartier na de starttijd tot en met
-// uiterlijk 02:00 's nachts (over middernacht heen).
+// uiterlijk 02:00 's nachts (over middernacht heen); op weekdagen (ma-do)
+// tot en met 18:00 zonder over middernacht te gaan.
 function werkEindTijdenBij() {
   const start = document.getElementById('start-tijd').value;
   const select = document.getElementById('eind-tijd');
@@ -86,7 +104,9 @@ function werkEindTijdenBij() {
   select.appendChild(placeholder);
   select.disabled = !start;
   if (!start) return;
-  const tot = 24 * 60 + tijdNaarMinuten(MAX_EINDTIJD);
+  const tot = weekdagBoeking
+    ? tijdNaarMinuten(WEEKDAG_EINDTIJD)
+    : 24 * 60 + tijdNaarMinuten(MAX_EINDTIJD);
   for (let m = tijdNaarMinuten(start) + 15; m <= tot; m += 15) {
     const optie = document.createElement('option');
     optie.value = optie.textContent = minutenNaarTijd(m);
@@ -99,11 +119,18 @@ function werkEindTijdenBij() {
 }
 
 // Eindtijd is geldig als hij ná de starttijd valt (zelfde dag),
-// of uiterlijk 02:00 's nachts (over middernacht heen).
+// of uiterlijk 02:00 's nachts (over middernacht heen). Op weekdagen (ma-do)
+// moet alles tussen 10:00 en 18:00 vallen.
 function valideerTijden(start, eind) {
   if (!start || !eind) return 'Vul zowel een starttijd als een eindtijd in.';
   const s = tijdNaarMinuten(start);
   const e = tijdNaarMinuten(eind);
+  if (weekdagBoeking) {
+    if (s < tijdNaarMinuten(MIN_STARTTIJD) || e > tijdNaarMinuten(WEEKDAG_EINDTIJD) || e <= s) {
+      return 'Op maandag t/m donderdag kan je enkel reserveren tussen 10:00 en 18:00.';
+    }
+    return null;
+  }
   const overMiddernacht = e < s && e <= tijdNaarMinuten(MAX_EINDTIJD);
   if (!overMiddernacht && e <= s) {
     return 'De eindtijd moet na de starttijd liggen. Loopt het feest door tot na middernacht, kies dan een eindtijd van uiterlijk 02:00.';
@@ -279,6 +306,7 @@ function reserveringStatus(datumStr) {
 let opslag = null;
 let getoondeMaand; // Date, altijd de 1e van de maand
 let geselecteerdeDatum = null;
+let weekdagBoeking = false; // geldt de geselecteerde datum als ma-do?
 
 const kalenderEl = document.getElementById('kalender');
 const maandTitelEl = document.getElementById('maand-titel');
@@ -431,18 +459,6 @@ function berekenPrijsregels() {
   if (formulierEl.elements.eigenFoodtruck.value === 'ja') {
     regels.push({ label: 'Eigen foodtruck (forfait)', bedrag: PRIJZEN.eigenFoodtruck });
   }
-  const drankkaarten = formulierEl.elements.drankkaarten.value;
-  if (drankkaarten === 'vooraf20' || drankkaarten === 'vooraf12') {
-    const prijsPerKaart = drankkaarten === 'vooraf20'
-      ? PRIJZEN.drankkaartVooraf20 : PRIJZEN.drankkaartVooraf12;
-    const aantal = veldAantal('drankkaarten-aantal');
-    if (aantal > 0) {
-      regels.push({
-        label: `Drankkaarten (${aantal} × € ${prijsPerKaart})`,
-        bedrag: aantal * prijsPerKaart
-      });
-    }
-  }
   if (formulierEl.elements.springkasteel.value === 'eigenLeverancier') {
     regels.push({
       label: 'Springkasteel eigen leverancier (forfait)',
@@ -469,9 +485,7 @@ function werkTotaalBij() {
 // alles en berekent het bedrag opnieuw; dit is alleen de doorgegeven keuze.
 function verzamelExtras() {
   const foodtruckGekozen = formulierEl.elements.foodtruckVzw.value === 'ja';
-  const drankkaartKeuze = formulierEl.elements.drankkaarten.value;
-  const drankkaartVooraf = drankkaartKeuze === 'vooraf20' || drankkaartKeuze === 'vooraf12';
-  return {
+  const extras = {
     foodtruckVzw: foodtruckGekozen
       ? {
           gekozen: true,
@@ -482,13 +496,11 @@ function verzamelExtras() {
       : false,
     eigenFoodtruck: formulierEl.elements.eigenFoodtruck.value === 'ja',
     bbq: formulierEl.elements.bbq.value === 'ja',
-    drankkaarten: {
-      keuze: drankkaartKeuze,
-      aantal: drankkaartVooraf ? veldAantal('drankkaarten-aantal') : undefined
-    },
-    muziek: formulierEl.elements.muziek.value,
     springkasteel: formulierEl.elements.springkasteel.value
   };
+  // Op ma-do is muziek niet mogelijk: het veld gaat dan helemaal niet mee.
+  if (!weekdagBoeking) extras.muziek = formulierEl.elements.muziek.value;
+  return extras;
 }
 
 // Controle van de extra opties vóór verzenden; geeft een foutmelding of null.
@@ -506,26 +518,51 @@ function valideerExtras(extras) {
       }
     }
   }
-  const keuze = extras.drankkaarten.keuze;
-  if (keuze === 'vooraf20' || keuze === 'vooraf12') {
-    const aantal = extras.drankkaarten.aantal;
-    if (!Number.isInteger(aantal) || aantal < 1 || aantal > 500) {
-      return 'Vul een geldig aantal drankkaarten in (1 t/m 500).';
-    }
-  }
   return null;
+}
+
+// Past het formulier aan op de gekozen dag: op ma-do een vaste keuzelijst
+// voor het type, geen muziekvraag, een lagere personengrens en de kortere
+// tijdvenster-hints. Uitgeschakelde velden tellen niet mee voor 'required'
+// en komen ook niet in de verzonden gegevens terecht.
+function pasWeekdagRegelsToe() {
+  document.getElementById('weekdag-info').classList.toggle('verborgen', !weekdagBoeking);
+
+  const typeTekst = document.getElementById('type-feest');
+  const typeKeuze = document.getElementById('type-feest-weekdag');
+  typeTekst.hidden = typeTekst.disabled = weekdagBoeking;
+  typeKeuze.hidden = typeKeuze.disabled = !weekdagBoeking;
+  document.getElementById('type-feest-label').htmlFor =
+    weekdagBoeking ? 'type-feest-weekdag' : 'type-feest';
+
+  const muziekSectie = document.getElementById('muziek-sectie');
+  muziekSectie.classList.toggle('verborgen', weekdagBoeking);
+  for (const radio of muziekSectie.querySelectorAll('input')) {
+    radio.disabled = weekdagBoeking;
+  }
+
+  const minPersonen = weekdagBoeking ? WEEKDAG_MIN_PERSONEN : WEEKEND_MIN_PERSONEN;
+  document.getElementById('aantal-personen').min = minPersonen;
+  document.getElementById('aantal-personen-hint').textContent = `Vanaf ${minPersonen} personen`;
+
+  document.getElementById('eind-tijd-hint').textContent =
+    weekdagBoeking ? 'Uiterlijk 18:00' : 'Uiterlijk 02:00 ’s nachts';
 }
 
 function openDialoog(datumStr) {
   geselecteerdeDatum = datumStr;
+  weekdagBoeking = isWeekdag(datumStr);
   document.getElementById('dialoog-datum').textContent = datumMooi(datumStr);
   formulierEl.reset();
   verbergFormulierFout();
+  pasWeekdagRegelsToe();
+  vulStartTijden();
   werkEindTijdenBij();
   werkOpbouwHintBij();
   werkExtraDetailsBij();
   werkTotaalBij();
-  startTypeFeestAnimatie();
+  if (weekdagBoeking) stopTypeFeestAnimatie();
+  else startTypeFeestAnimatie();
   dialoogEl.showModal();
 }
 
@@ -577,15 +614,18 @@ async function verwerkFormulier(event) {
   const naam = document.getElementById('naam').value.trim();
   const email = document.getElementById('email').value.trim();
   const telefoon = document.getElementById('telefoon').value.trim();
-  const typeFeest = document.getElementById('type-feest').value.trim();
+  const typeFeest = weekdagBoeking
+    ? document.getElementById('type-feest-weekdag').value
+    : document.getElementById('type-feest').value.trim();
   const aantalPersonen = Number(document.getElementById('aantal-personen').value);
   const startTijd = document.getElementById('start-tijd').value;
   const eindTijd = document.getElementById('eind-tijd').value;
   const opbouwMinuten = Number(document.getElementById('opbouw').value);
   const opmerkingen = document.getElementById('opmerkingen').value.trim();
 
-  if (!(aantalPersonen >= 25)) {
-    toonFormulierFout('Reserveren kan vanaf minimaal 25 personen.');
+  const minPersonen = weekdagBoeking ? WEEKDAG_MIN_PERSONEN : WEEKEND_MIN_PERSONEN;
+  if (!(aantalPersonen >= minPersonen)) {
+    toonFormulierFout(`Reserveren kan vanaf minimaal ${minPersonen} personen.`);
     return;
   }
   const tijdFout = valideerTijden(startTijd, eindTijd);

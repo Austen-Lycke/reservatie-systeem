@@ -155,14 +155,20 @@ function maakOmschrijving(details: Record<string, unknown>): string {
   } | null;
   const keuzes = extra?.keuzes;
   if (keuzes) {
-    const drankkaarten = (keuzes.drankkaarten ?? {}) as Record<string, unknown>;
     regels.push(
       `Eigen foodtruck: ${keuzes.eigenFoodtruck ? 'Ja (forfait € 25)' : 'Nee'}`,
-      `BBQ zelf meebrengen: ${keuzes.bbq ? 'Ja' : 'Nee'}`,
-      `Drankkaarten: ${DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—'}`,
-      `Muziek: ${MUZIEK_LABELS[String(keuzes.muziek)] ?? '—'}`,
-      `Springkasteel: ${SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—'}`
+      `BBQ zelf meebrengen: ${keuzes.bbq ? 'Ja' : 'Nee'}`
     );
+    // Drankkaarten bestaan niet meer en op ma-do is er geen muziekkeuze;
+    // alleen tonen wat er bij het boeken echt is vastgelegd.
+    if (keuzes.drankkaarten !== undefined) {
+      const drankkaarten = (keuzes.drankkaarten ?? {}) as Record<string, unknown>;
+      regels.push(`Drankkaarten: ${DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—'}`);
+    }
+    if (keuzes.muziek !== undefined) {
+      regels.push(`Muziek: ${MUZIEK_LABELS[String(keuzes.muziek)] ?? '—'}`);
+    }
+    regels.push(`Springkasteel: ${SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—'}`);
   }
   for (const regel of extra?.prijsregels ?? []) {
     regels.push(`${toon(regel.label)}: € ${Number(regel.bedrag)}`);

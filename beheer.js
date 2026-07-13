@@ -172,15 +172,22 @@ function detailRijen(details) {
 
   const keuzes = details.extra_opties?.keuzes;
   if (keuzes) {
-    const drankkaarten = keuzes.drankkaarten ?? {};
-    let drankkaartTekst = DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—';
-    if (drankkaarten.aantal) {
-      const perKaart = drankkaarten.keuze === 'vooraf12' ? 12 : 20;
-      drankkaartTekst = `Vooraf — ${drankkaarten.aantal} × € ${perKaart}`;
+    // Drankkaarten bestaan niet meer en op ma-do is er geen muziekkeuze;
+    // alleen tonen wat er bij het boeken echt is vastgelegd (oude
+    // reserveringen behouden zo hun rijen).
+    if (keuzes.drankkaarten !== undefined) {
+      const drankkaarten = keuzes.drankkaarten ?? {};
+      let drankkaartTekst = DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—';
+      if (drankkaarten.aantal) {
+        const perKaart = drankkaarten.keuze === 'vooraf12' ? 12 : 20;
+        drankkaartTekst = `Vooraf — ${drankkaarten.aantal} × € ${perKaart}`;
+      }
+      rijen.push(['Drankkaarten', drankkaartTekst]);
+    }
+    if (keuzes.muziek !== undefined) {
+      rijen.push(['Muziek', MUZIEK_LABELS[String(keuzes.muziek)] ?? '—']);
     }
     rijen.push(
-      ['Drankkaarten', drankkaartTekst],
-      ['Muziek', MUZIEK_LABELS[String(keuzes.muziek)] ?? '—'],
       ['Springkasteel', SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—'],
       ['Foodtruck / BBQ', `${keuzes.eigenFoodtruck ? 'Ja' : 'Nee'} / ${keuzes.bbq ? 'Ja' : 'Nee'}`]
     );

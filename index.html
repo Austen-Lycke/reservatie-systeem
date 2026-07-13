@@ -66,6 +66,7 @@
           <ul>
             <li>Maximaal 1 feest per dag</li>
             <li>Eindtijd uiterlijk 02:00 &rsquo;s nachts</li>
+            <li>Ma t/m do: enkel teambuildings en vergaderingen, 10:00&ndash;18:00</li>
             <li>Tot 1,5 uur vooraf inrichten</li>
             <li>€ 60 reservatiekosten, direct online (o.a. Bancontact)</li>
           </ul>
@@ -104,17 +105,27 @@
                  placeholder="bv. jan.peeters@gmail.com">
         </div>
 
+        <p id="weekdag-info" class="weekdag-info verborgen">
+          Op maandag t/m donderdag verhuren we enkel voor teambuildings en
+          vergaderingen, tussen 10:00 en 18:00, zonder muziek (vanaf 15 personen).
+        </p>
+
         <div class="veld-rij">
           <div class="veld">
-            <label for="type-feest">Type feest *</label>
+            <label id="type-feest-label" for="type-feest">Type feest *</label>
             <input type="text" id="type-feest" name="typeFeest" required maxlength="100"
                    placeholder="bv. lentefeest" autocomplete="off">
+            <select id="type-feest-weekdag" name="typeFeestWeekdag" required hidden disabled>
+              <option value="" disabled selected>Kies een optie</option>
+              <option value="teambuilding">Teambuilding</option>
+              <option value="vergadering">Vergadering</option>
+            </select>
           </div>
           <div class="veld">
             <label for="aantal-personen">Aantal personen *</label>
             <input type="number" id="aantal-personen" name="aantalPersonen" min="25" max="500" required
                    placeholder="bv. 50">
-            <small>Vanaf 25 personen</small>
+            <small id="aantal-personen-hint">Vanaf 25 personen</small>
           </div>
         </div>
 
@@ -126,7 +137,7 @@
           <div class="veld">
             <label for="eind-tijd">Eindtijd feest *</label>
             <select id="eind-tijd" name="eindTijd" required></select>
-            <small>Uiterlijk 02:00 &rsquo;s nachts</small>
+            <small id="eind-tijd-hint">Uiterlijk 02:00 &rsquo;s nachts</small>
           </div>
         </div>
 
@@ -192,23 +203,7 @@
             </div>
           </div>
 
-          <div class="extra-sectie">
-            <span class="extra-vraag">Drankkaarten</span>
-            <div class="keuze-kolom">
-              <label><input type="radio" name="drankkaarten" value="vooraf20"> Vooraf bestellen — € 20,00 per kaart</label>
-              <label><input type="radio" name="drankkaarten" value="vooraf12"> Vooraf bestellen — € 12,00 per kaart</label>
-              <label><input type="radio" name="drankkaarten" value="terPlaatse"> Ik regel ze liever ter plaatse</label>
-              <label><input type="radio" name="drankkaarten" value="geen" checked> Geen drankkaarten</label>
-            </div>
-            <div class="extra-detail verborgen" data-toon-bij="drankkaarten=vooraf20|vooraf12">
-              <div class="gerecht-rij">
-                <label for="drankkaarten-aantal">Aantal drankkaarten</label>
-                <input type="number" id="drankkaarten-aantal" min="1" max="500" placeholder="bv. 50">
-              </div>
-            </div>
-          </div>
-
-          <div class="extra-sectie">
+          <div class="extra-sectie" id="muziek-sectie">
             <span class="extra-vraag">Muziek</span>
             <div class="keuze-kolom">
               <label><input type="radio" name="muziek" value="eigenDj"> Eigen DJ (voorziet zelf alle materiaal)</label>

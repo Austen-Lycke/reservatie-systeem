@@ -87,14 +87,20 @@ async function stuurBevestigingsmail(
   } | null;
   const keuzes = extra?.keuzes;
   if (keuzes) {
-    const drankkaarten = (keuzes.drankkaarten ?? {}) as Record<string, unknown>;
     rijen.push(
       ['Eigen foodtruck', keuzes.eigenFoodtruck ? 'Ja (forfait € 25)' : 'Nee'],
-      ['BBQ zelf meebrengen', keuzes.bbq ? 'Ja' : 'Nee'],
-      ['Drankkaarten', DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—'],
-      ['Muziek', MUZIEK_LABELS[String(keuzes.muziek)] ?? '—'],
-      ['Springkasteel', SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—']
+      ['BBQ zelf meebrengen', keuzes.bbq ? 'Ja' : 'Nee']
     );
+    // Drankkaarten bestaan niet meer en op ma-do is er geen muziekkeuze;
+    // alleen tonen wat er bij het boeken echt is vastgelegd.
+    if (keuzes.drankkaarten !== undefined) {
+      const drankkaarten = (keuzes.drankkaarten ?? {}) as Record<string, unknown>;
+      rijen.push(['Drankkaarten', DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—']);
+    }
+    if (keuzes.muziek !== undefined) {
+      rijen.push(['Muziek', MUZIEK_LABELS[String(keuzes.muziek)] ?? '—']);
+    }
+    rijen.push(['Springkasteel', SPRINGKASTEEL_LABELS[String(keuzes.springkasteel)] ?? '—']);
   }
   for (const regel of extra?.prijsregels ?? []) {
     rijen.push([toon(regel.label), `€ ${Number(regel.bedrag)}`]);

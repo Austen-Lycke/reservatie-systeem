@@ -16,14 +16,20 @@ const PRIJZEN = {
   hamburgerFrietjes: 8,   // per persoon
   pita: 6,                // per persoon
   eigenFoodtruck: 25,     // forfait stroom/water/kabels/afval
-  drankkaartVooraf20: 20, // per kaart
-  drankkaartVooraf12: 12, // per kaart
   springkasteelEigenLeverancier: 15 // forfait stroom/kabels
 };
 
 const MUZIEK_KEUZES = ['eigenDj', 'spotify', 'bar'];
 const SPRINGKASTEEL_KEUZES = ['vzw', 'eigenLeverancier', 'geen'];
-const DRANKKAART_KEUZES = ['vooraf20', 'vooraf12', 'terPlaatse', 'geen'];
+
+// Maandag t/m donderdag gelden strengere regels: enkel teambuildings of
+// vergaderingen, tussen 10:00 en 18:00, zonder muziek, vanaf 15 personen.
+const WEEKDAG_TYPES = ['teambuilding', 'vergadering'];
+
+function isWeekdag(datum: string): boolean {
+  const dag = new Date(`${datum}T00:00:00Z`).getUTCDay();
+  return dag >= 1 && dag <= 4;
+}
 
 type Prijsregel = { label: string; bedrag: number };
 
@@ -34,7 +40,7 @@ function geldigAantal(n: unknown): n is number {
 // Controleert de extra opties en berekent de prijsregels + het totaal.
 // Ontbrekende velden gelden als "nee"/"geen", zodat een oude (gecachte)
 // versie van het formulier zonder extra's gewoon blijft werken.
-function valideerExtras(ruw: unknown):
+function valideerExtras(ruw: unknown, weekdag: boolean):
   { fout: string } | { keuzes: Record<string, unknown>; prijsregels: Prijsregel[]; totaal: number } {
   const extras = (ruw && typeof ruw === 'object' ? ruw : {}) as Record<string, unknown>;
   const prijsregels: Prijsregel[] = [
@@ -81,27 +87,26 @@ function valideerExtras(ruw: unknown):
 
   const bbq = extras.bbq === true;
 
-  // Drankkaarten: vooraf (per kaart) of ter plaatse/geen.
+  // Drankkaarten bestaan niet meer. Een oud (gecacht) formulier kan er nog
+  // eentje meesturen; stilzwijgend negeren zou minder aanrekenen dan de klant
+  // op het scherm zag, dus expliciet weigeren.
   const dk = (extras.drankkaarten && typeof extras.drankkaarten === 'object'
     ? extras.drankkaarten : {}) as Record<string, unknown>;
-  const drankkaartKeuze = dk.keuze === undefined ? 'geen' : String(dk.keuze);
-  if (!DRANKKAART_KEUZES.includes(drankkaartKeuze)) return { fout: 'Ongeldige extra opties.' };
-  let drankkaartAantal = 0;
-  if (drankkaartKeuze === 'vooraf20' || drankkaartKeuze === 'vooraf12') {
-    drankkaartAantal = Number(dk.aantal);
-    if (!geldigAantal(drankkaartAantal) || drankkaartAantal < 1) {
-      return { fout: 'Vul een geldig aantal drankkaarten in (1 t/m 500).' };
-    }
-    const prijsPerKaart = drankkaartKeuze === 'vooraf20'
-      ? PRIJZEN.drankkaartVooraf20 : PRIJZEN.drankkaartVooraf12;
-    prijsregels.push({
-      label: `Drankkaarten (${drankkaartAantal} × € ${prijsPerKaart})`,
-      bedrag: drankkaartAantal * prijsPerKaart
-    });
+  if (dk.keuze === 'vooraf20' || dk.keuze === 'vooraf12') {
+    return { fout: 'Drankkaarten worden niet meer aangeboden. Herlaad de pagina en probeer opnieuw.' };
   }
 
-  const muziek = extras.muziek === undefined ? 'bar' : String(extras.muziek);
-  if (!MUZIEK_KEUZES.includes(muziek)) return { fout: 'Ongeldige extra opties.' };
+  // Muziek: op ma-do niet mogelijk — het formulier stuurt het veld dan niet
+  // mee en de keuze wordt ook niet opgeslagen. In het weekend verplicht.
+  let muziek: string | undefined;
+  if (weekdag) {
+    if (extras.muziek !== undefined) {
+      return { fout: 'Op maandag t/m donderdag is muziek niet mogelijk.' };
+    }
+  } else {
+    muziek = extras.muziek === undefined ? 'bar' : String(extras.muziek);
+    if (!MUZIEK_KEUZES.includes(muziek)) return { fout: 'Ongeldige extra opties.' };
+  }
 
   const springkasteel = extras.springkasteel === undefined ? 'geen' : String(extras.springkasteel);
   if (!SPRINGKASTEEL_KEUZES.includes(springkasteel)) return { fout: 'Ongeldige extra opties.' };
@@ -117,8 +122,7 @@ function valideerExtras(ruw: unknown):
       foodtruckVzw: foodtruckGekozen ? keuzesFoodtruck : false,
       eigenFoodtruck,
       bbq,
-      drankkaarten: { keuze: drankkaartKeuze, aantal: drankkaartAantal || undefined },
-      muziek,
+      ...(muziek !== undefined && { muziek }),
       springkasteel
     },
     prijsregels,
@@ -162,14 +166,39 @@ Deno.serve(async (req) => {
     return antwoord(400, { fout: 'Ongeldige datum.' });
   }
 
+  const weekdag = isWeekdag(datum);
+
   const aantalPersonen = Number(invoer.aantalPersonen);
-  if (!Number.isInteger(aantalPersonen) || aantalPersonen < 25 || aantalPersonen > 500) {
-    return antwoord(400, { fout: 'Reserveren kan vanaf minimaal 25 personen (maximaal 500).' });
+  const minPersonen = weekdag ? 15 : 25;
+  if (!Number.isInteger(aantalPersonen) || aantalPersonen < minPersonen || aantalPersonen > 500) {
+    return antwoord(400, {
+      fout: weekdag
+        ? 'Op maandag t/m donderdag kan je reserveren vanaf 15 personen (maximaal 500).'
+        : 'Reserveren kan vanaf minimaal 25 personen (maximaal 500).'
+    });
+  }
+
+  const startTijd = String(invoer.startTijd ?? '');
+  const eindTijd = String(invoer.eindTijd ?? '');
+  const TIJD_FORMAAT = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (!TIJD_FORMAAT.test(startTijd) || !TIJD_FORMAAT.test(eindTijd)) {
+    return antwoord(400, { fout: 'Ongeldige tijden.' });
+  }
+  if (startTijd < '10:00') {
+    return antwoord(400, { fout: 'Reserveren kan ten vroegste vanaf 10:00.' });
+  }
+  if (weekdag) {
+    if (eindTijd > '18:00' || eindTijd <= startTijd) {
+      return antwoord(400, { fout: 'Op maandag t/m donderdag kan je enkel reserveren tussen 10:00 en 18:00.' });
+    }
+    if (!WEEKDAG_TYPES.includes(String(invoer.typeFeest ?? '').trim().toLowerCase())) {
+      return antwoord(400, { fout: 'Op maandag t/m donderdag zijn enkel teambuildings en vergaderingen mogelijk.' });
+    }
   }
 
   // Extra opties controleren en het totaal berekenen vóór we de datum
   // vastzetten: een ongeldige aanvraag mag de datum nooit blokkeren.
-  const extrasResultaat = valideerExtras(invoer.extras);
+  const extrasResultaat = valideerExtras(invoer.extras, weekdag);
   if ('fout' in extrasResultaat) {
     return antwoord(400, { fout: extrasResultaat.fout });
   }
