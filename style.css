@@ -914,12 +914,27 @@ body:has(dialog[open]) { overflow: hidden; }
   overflow-wrap: anywhere;
   min-width: 0;
 }
+.oude-boeking-melding {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--zacht);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: var(--grijs-licht);
+}
 .prijs-blok {
   margin-top: 14px;
   padding: 12px 14px;
   background: var(--zacht);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 10px;
+}
+/* Bij een oude boeking blijven prijsblok en voetnoot leeg: dan niet tonen. */
+.prijs-blok:empty,
+.detail-voet:empty {
+  display: none;
 }
 .prijs-blok .prijs-regel {
   display: flex;

@@ -182,6 +182,21 @@ function maakOmschrijving(details: Record<string, unknown>): string {
   return regels.join('\n');
 }
 
+// Bouwt één VEVENT (hele dag) voor een boeking van vóór het
+// reserveringssysteem: daarvan staan geen gegevens in de database.
+function maakOudEvent(datum: string, dtstamp: string): string[] {
+  return [
+    'BEGIN:VEVENT',
+    `UID:${datum}@reserveren.8-duust.be`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART;VALUE=DATE:${datum.replaceAll('-', '')}`,
+    `DTEND;VALUE=DATE:${volgendeDag(datum).replaceAll('-', '')}`,
+    'SUMMARY:Oude boeking',
+    `DESCRIPTION:${escapeIcs('Raadpleeg de fysieke kalender. Dit is een oude boeking.')}`,
+    'END:VEVENT'
+  ];
+}
+
 // Bouwt één VEVENT voor een betaalde reservering.
 function maakEvent(details: Record<string, unknown>, dtstamp: string): string[] {
   const datum = String(details.datum);
@@ -234,14 +249,16 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
 
-  // Alleen betaalde reserveringen (de !inner-join filtert), tot een jaar
-  // terug zodat de feed compact blijft maar de recente historiek zichtbaar is.
+  // Alle betaalde reserveringen, tot een jaar terug zodat de feed compact
+  // blijft maar de recente historiek zichtbaar is. We vertrekken vanuit
+  // "reserveringen" zodat ook oude, handmatig ingevoerde boekingen (zonder
+  // detailrij) in de agenda verschijnen.
   const jaarGeleden = new Date();
   jaarGeleden.setFullYear(jaarGeleden.getFullYear() - 1);
   const { data, error } = await admin
-    .from('reservering_details')
-    .select('*, reserveringen!inner(status)')
-    .eq('reserveringen.status', 'betaald')
+    .from('reserveringen')
+    .select('datum, reservering_details(*)')
+    .eq('status', 'betaald')
     .gte('datum', jaarGeleden.toISOString().slice(0, 10))
     .order('datum');
 
@@ -264,7 +281,11 @@ Deno.serve(async (req) => {
     'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
     'X-PUBLISHED-TTL:PT1H',
     ...VTIMEZONE,
-    ...(data ?? []).flatMap((details) => maakEvent(details, dtstamp)),
+    ...(data ?? []).flatMap((rij) =>
+      rij.reservering_details
+        ? maakEvent(rij.reservering_details as Record<string, unknown>, dtstamp)
+        : maakOudEvent(String(rij.datum), dtstamp)
+    ),
     'END:VCALENDAR'
   ];
 

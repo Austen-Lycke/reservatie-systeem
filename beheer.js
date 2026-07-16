@@ -140,7 +140,9 @@ function renderKalender() {
     const details = reserveringen[datumStr];
     if (details) {
       cel.className = 'dag bezet klikbaar';
-      cel.title = `${toon(details.type_feest)} – ${toon(details.naam)}`;
+      cel.title = details.oudeBoeking
+        ? 'Oude boeking'
+        : `${toon(details.type_feest)} – ${toon(details.naam)}`;
       cel.tabIndex = 0;
       cel.setAttribute('role', 'button');
       cel.addEventListener('click', () => toonDetails(datumStr));
@@ -207,6 +209,25 @@ function toonDetails(datumStr) {
   geselecteerdeDatum = datumStr;
 
   detailTitelEl.textContent = datumMooi(datumStr);
+
+  // Boeking van vóór het reserveringssysteem: er staan geen gegevens in de
+  // database, dus alleen een verwijzing naar de fysieke kalender tonen.
+  if (details.oudeBoeking) {
+    detailSubtitelEl.textContent = 'Oude boeking';
+    detailLijstEl.innerHTML = '';
+    detailPrijsEl.innerHTML = '';
+    detailVoetEl.innerHTML = '';
+    const melding = document.createElement('p');
+    melding.className = 'oude-boeking-melding';
+    melding.textContent = 'Raadpleeg de fysieke kalender. Dit is een oude boeking.';
+    detailLijstEl.appendChild(melding);
+    detailBellenEl.classList.add('verborgen');
+    detailMailenEl.classList.add('verborgen');
+    detailPaneelEl.classList.remove('verborgen');
+    renderKalender();
+    detailPaneelEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
 
   const opbouwMinuten = Number(details.opbouw_minuten ?? 0);
   const subtitel = [
@@ -311,8 +332,11 @@ function renderStatistieken() {
   const dezeMaand = Object.values(reserveringen)
     .filter((r) => String(r.datum).startsWith(maandPrefix));
   statFeestenEl.textContent = String(dezeMaand.length);
+  // Oude boekingen tellen mee als feest, maar er is geen bedrag van bekend.
   statOntvangenEl.textContent =
-    bedrag(dezeMaand.reduce((som, r) => som + Number(r.totaal_bedrag ?? 60), 0));
+    bedrag(dezeMaand.reduce(
+      (som, r) => som + (r.oudeBoeking ? 0 : Number(r.totaal_bedrag ?? 60)), 0
+    ));
 
   const vandaag = datumNaarString(nu);
   const volgende = Object.keys(reserveringen).filter((d) => d >= vandaag).sort()[0];
@@ -329,11 +353,14 @@ function renderStatistieken() {
   statVolgendLabelEl.textContent = `Volgend feest — ${wanneer}`;
 
   const details = reserveringen[volgende];
-  statVolgendEl.textContent = `${datumKort(volgende)} — ${toon(details.type_feest)}`;
+  statVolgendEl.textContent = details.oudeBoeking
+    ? `${datumKort(volgende)} — Oude boeking`
+    : `${datumKort(volgende)} — ${toon(details.type_feest)}`;
   const sub = document.createElement('div');
   sub.className = 'stat-sub';
-  sub.textContent =
-    `${toon(details.aantal_personen)} pers. · ${toon(details.start_tijd)}–${toon(details.eind_tijd)}`;
+  sub.textContent = details.oudeBoeking
+    ? 'Raadpleeg de fysieke kalender'
+    : `${toon(details.aantal_personen)} pers. · ${toon(details.start_tijd)}–${toon(details.eind_tijd)}`;
   statVolgendEl.appendChild(sub);
 }
 
@@ -391,17 +418,20 @@ function renderKomendeLijst() {
     info.className = 'komende-info';
     const titel = document.createElement('span');
     titel.className = 'komende-titel';
-    titel.textContent = `${toon(details.type_feest)} — ${toon(details.naam)}`;
+    titel.textContent = details.oudeBoeking
+      ? 'Oude boeking'
+      : `${toon(details.type_feest)} — ${toon(details.naam)}`;
     const meta = document.createElement('span');
     meta.className = 'komende-meta';
-    meta.textContent =
-      `${toon(details.aantal_personen)} pers. · ${toon(details.start_tijd)}–${toon(details.eind_tijd)}`;
+    meta.textContent = details.oudeBoeking
+      ? 'Raadpleeg de fysieke kalender'
+      : `${toon(details.aantal_personen)} pers. · ${toon(details.start_tijd)}–${toon(details.eind_tijd)}`;
     info.appendChild(titel);
     info.appendChild(meta);
 
     const bedragEl = document.createElement('span');
     bedragEl.className = 'komende-bedrag';
-    bedragEl.textContent = bedrag(details.totaal_bedrag ?? 60);
+    bedragEl.textContent = details.oudeBoeking ? '—' : bedrag(details.totaal_bedrag ?? 60);
 
     knop.appendChild(datumBlok);
     knop.appendChild(info);
@@ -417,19 +447,24 @@ function renderKomendeLijst() {
 // ---------- Gegevens laden ----------
 
 async function laadReserveringen() {
-  // Alleen betaalde reserveringen: de !inner-join filtert op status.
-  // RLS zorgt ervoor dat alleen beheerders rijen terugkrijgen.
+  // Alle betaalde reserveringen. We vertrekken vanuit "reserveringen" zodat
+  // ook boekingen van vóór het systeem (handmatig ingevoerd, zonder detailrij)
+  // zichtbaar zijn. RLS zorgt ervoor dat alleen beheerders de details lezen.
   const { data, error } = await client
-    .from('reservering_details')
-    .select('*, reserveringen!inner(status)')
-    .eq('reserveringen.status', 'betaald')
+    .from('reserveringen')
+    .select('datum, reservering_details(*)')
+    .eq('status', 'betaald')
     .order('datum');
   if (error) {
     toonFoutBanner('Kan reserveringen niet laden: ' + error.message);
     return;
   }
   reserveringen = {};
-  for (const rij of data) reserveringen[rij.datum] = rij;
+  for (const rij of data) {
+    // Zonder detailrij is het een oude boeking: die tonen we met een
+    // verwijzing naar de fysieke kalender in plaats van gegevens.
+    reserveringen[rij.datum] = rij.reservering_details ?? { datum: rij.datum, oudeBoeking: true };
+  }
   renderKalender();
   renderKomendeLijst();
   renderStatistieken();
