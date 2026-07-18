@@ -1112,6 +1112,26 @@ body:has(dialog[open]) { overflow: hidden; }
   color: var(--grijs-licht);
 }
 
+/* ---------- Site-voet ---------- */
+
+.site-voet {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rand);
+  text-align: center;
+}
+.site-voet p {
+  margin: 0;
+  font-size: var(--tekst-klein);
+  color: var(--grijs);
+}
+.site-voet a {
+  color: var(--groen-donker);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.site-voet a:hover { color: var(--groen-diep); }
+
 /* ---------- Micro-animaties: knoppen en aanraakfeedback ---------- */
 
 /* Alle knopachtige elementen krijgen dezelfde vloeiende kleurovergang en
