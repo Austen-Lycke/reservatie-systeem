@@ -414,15 +414,15 @@ function renderKalender() {
     if (datumStr < vandaag) {
       cel.className = 'dag niet-beschikbaar';
       cel.title = 'Deze datum is voorbij';
-    } else if (datumStr < eersteBoekbaar) {
-      cel.className = 'dag niet-beschikbaar';
-      cel.title = 'Reserveren kan tot uiterlijk 2 dagen vooraf';
     } else if (status === STATUS_BETAALD) {
       cel.className = 'dag bezet';
       cel.title = 'Bezet';
     } else if (status === STATUS_IN_AFWACHTING) {
       cel.className = 'dag in-afwachting';
       cel.title = 'Iemand is deze datum nu aan het betalen';
+    } else if (datumStr < eersteBoekbaar) {
+      cel.className = 'dag niet-beschikbaar';
+      cel.title = 'Reserveren kan tot uiterlijk 2 dagen vooraf';
     } else {
       cel.className = 'dag beschikbaar';
       cel.title = 'Beschikbaar – klik om te reserveren';
