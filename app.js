@@ -416,7 +416,7 @@ function renderKalender() {
       cel.title = 'Deze datum is voorbij';
     } else if (datumStr < eersteBoekbaar) {
       cel.className = 'dag niet-beschikbaar';
-      cel.title = 'Te kort dag — reserveren kan tot uiterlijk 2 dagen vooraf';
+      cel.title = 'Reserveren kan tot uiterlijk 2 dagen vooraf';
     } else if (status === STATUS_BETAALD) {
       cel.className = 'dag bezet';
       cel.title = 'Bezet';
@@ -437,6 +437,11 @@ function renderKalender() {
       });
     }
     if (datumStr === vandaag) cel.classList.add('vandaag');
+    // Op aanraakschermen bestaat er geen hover-title: wie op een grijze,
+    // bezette of in-afwachting-dag tikt, krijgt de uitleg als toast te zien.
+    if (!cel.classList.contains('beschikbaar')) {
+      cel.addEventListener('click', () => toonToast(cel.title));
+    }
     kalenderEl.appendChild(cel);
   }
 }

@@ -1,19 +1,20 @@
 /* Ontwerp 1a — "Kalm & professioneel". Kleuren en maten komen uit het
-   handoff-bestand van Claude Design (Ontwerp 1a.dc.html). */
+   handoff-bestand van Claude Design (Ontwerp 1a.dc.html).
+   Aangepast na design-review: donkerder groen en grijs voor WCAG AA-contrast,
+   en vaste tokens voor tekstgroottes en hoekradius. */
 
 :root {
   --bg: #f6f5f2;
   --kaart: #fff;
   --inkt: #1c1b18;
   --grijs: #6f6b63;
-  --grijs-licht: #8a857b;
-  --grijs-vaag: #a8a396;
+  --grijs-licht: #726e65;
   --rand: rgba(0, 0, 0, 0.07);
   --rand-invoer: rgba(0, 0, 0, 0.15);
   --rand-knop: rgba(0, 0, 0, 0.12);
-  --groen: #2e9e4f;
-  --groen-donker: #23803e;
-  --groen-diep: #1a5c2d;
+  --groen: #23803e;
+  --groen-donker: #1a5c2d;
+  --groen-diep: #15481f;
   --groen-tekst: #3d5a47;
   --groen-bg: #eef6f0;
   --groen-rand: #d3e8da;
@@ -23,6 +24,20 @@
   --dag-vrij: #eceae4;
   --dag-vrij-tekst: #b3afa5;
   --zacht: #faf9f6;
+
+  /* Tekstgroottes: één vaste schaal voor de hele site. */
+  --tekst-mini: 12px;
+  --tekst-klein: 13px;
+  --tekst-basis: 14px;
+  --tekst-groot: 16px;
+  --tekst-titel: 20px;
+  --tekst-cijfer: 28px;
+  --tekst-kop: 32px;
+
+  /* Hoekradius: drie vaste stappen. */
+  --radius-klein: 8px;
+  --radius: 10px;
+  --radius-groot: 16px;
 
   /* Micro-animaties: één gedeelde beweegtaal voor de hele site. */
   --vloeiend: cubic-bezier(0.32, 0.72, 0, 1);
@@ -38,7 +53,7 @@ body {
   margin: 0;
   color: var(--inkt);
   background: var(--bg);
-  font-size: 14px;
+  font-size: var(--tekst-basis);
   line-height: 1.5;
 }
 
@@ -71,20 +86,20 @@ a:hover { color: #000; }
 }
 .topbalk-label {
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--tekst-groot);
   color: var(--grijs-licht);
 }
 .topbalk-titel {
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--tekst-groot);
   line-height: 1.2;
 }
 .topbalk-sub {
-  font-size: 12px;
+  font-size: var(--tekst-mini);
   color: var(--grijs-licht);
 }
 .topbalk-telefoon {
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
   font-weight: 600;
   text-decoration: none;
   color: var(--grijs);
@@ -96,16 +111,16 @@ a:hover { color: #000; }
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   color: var(--grijs);
 }
 .beheer-balk button {
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-klein);
   border: 1px solid var(--rand-knop);
   background: var(--kaart);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   color: var(--inkt);
   cursor: pointer;
 }
@@ -121,14 +136,14 @@ a:hover { color: #000; }
 .pagina-breed { max-width: 1160px; }
 
 .pagina h1 {
-  font-size: 32px;
+  font-size: var(--tekst-kop);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.01em;
   margin: 0 0 8px;
 }
 .intro {
-  font-size: 15px;
+  font-size: var(--tekst-groot);
   color: var(--grijs);
   line-height: 1.55;
   margin: 0 0 24px;
@@ -153,18 +168,18 @@ a:hover { color: #000; }
 .kaart {
   background: var(--kaart);
   border: 1px solid var(--rand);
-  border-radius: 14px;
+  border-radius: var(--radius-groot);
   padding: 22px 24px;
 }
 .kaart h2 {
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: var(--tekst-groot);
   font-weight: 700;
 }
 .kaart p { color: var(--grijs); }
 
 .bezoek-kaart p {
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
   line-height: 1.55;
   margin: 0 0 14px;
 }
@@ -176,32 +191,46 @@ a:hover { color: #000; }
   gap: 8px;
   width: 100%;
   min-height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: none;
   background: var(--groen);
   color: #fff;
   font: inherit;
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--tekst-basis);
   text-decoration: none;
   cursor: pointer;
 }
 .knop-groen:hover { background: var(--groen-donker); color: #fff; }
 .knop-groen:disabled { opacity: 0.6; cursor: default; }
 
+.locatie-kaart .locatie-adres {
+  font-size: var(--tekst-basis);
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+.locatie-kaartje {
+  display: block;
+  width: 100%;
+  height: 200px;
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+
 .info-kaart {
   background: var(--groen-bg);
   border-color: var(--groen-rand);
 }
 .info-kaart h2 {
-  font-size: 14px;
+  font-size: var(--tekst-basis);
   margin-bottom: 8px;
   color: var(--groen-diep);
 }
 .info-kaart ul {
   margin: 0;
   padding: 0 0 0 16px;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   color: var(--groen-tekst);
   line-height: 1.7;
 }
@@ -210,11 +239,11 @@ a:hover { color: #000; }
 
 .banner {
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: #fdf6e3;
   border: 1px solid #f0dfad;
   margin-bottom: 16px;
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
   animation: verschijn var(--duur-normaal) var(--vloeiend);
 }
 .banner-fout { background: #fdeeed; border-color: #f2c4c1; }
@@ -232,10 +261,10 @@ a:hover { color: #000; }
   background: var(--inkt);
   color: #fff;
   padding: 12px 20px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   max-width: 90vw;
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
   transition: opacity var(--duur-lang) var(--vloeiend),
               transform var(--duur-lang) var(--vloeiend),
               visibility var(--duur-lang);
@@ -260,17 +289,17 @@ a:hover { color: #000; }
 }
 .kalender-kop h2 {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--tekst-groot);
   font-weight: 600;
   text-transform: capitalize;
 }
 .kalender-kop button {
   width: 36px;
   height: 36px;
-  border-radius: 9px;
+  border-radius: var(--radius-klein);
   border: 1px solid rgba(0, 0, 0, 0.1);
   background: var(--kaart);
-  font-size: 16px;
+  font-size: var(--tekst-groot);
   color: var(--grijs);
   cursor: pointer;
   flex: none;
@@ -286,8 +315,8 @@ a:hover { color: #000; }
 .weekdagen { margin-bottom: 4px; }
 .weekdagen div {
   text-align: center;
-  font-size: 11px;
-  color: var(--grijs-vaag);
+  font-size: var(--tekst-mini);
+  color: var(--grijs-licht);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding-bottom: 4px;
@@ -298,9 +327,9 @@ a:hover { color: #000; }
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-weight: 600;
-  font-size: 14.5px;
+  font-size: var(--tekst-basis);
 }
 .dag.leeg { visibility: hidden; }
 .dag.beschikbaar,
@@ -315,7 +344,10 @@ a:hover { color: #000; }
 }
 .dag.beschikbaar:hover, .dag.beschikbaar:focus-visible {
   background: var(--groen-donker);
-  outline: 2px solid var(--groen-diep);
+}
+.dag.beschikbaar:focus-visible {
+  outline: 2px solid var(--inkt);
+  outline-offset: 1px;
 }
 .dag.beschikbaar:hover { transform: scale(1.06); }
 .dag.beschikbaar:active { transform: scale(0.95); }
@@ -336,7 +368,9 @@ a:hover { color: #000; }
   background: var(--dag-vrij);
   color: var(--dag-vrij-tekst);
 }
-.dag.vandaag { box-shadow: inset 0 0 0 2px var(--inkt); }
+/* Subtiele ring rond vandaag: informatief, maar mag niet méér opvallen dan
+   de boekbare (groene) dagen. */
+.dag.vandaag { box-shadow: inset 0 0 0 2px var(--grijs); }
 
 /* Bij het bladeren tussen maanden schuift de nieuwe maand zachtjes binnen
    in de bladerrichting (klassen worden gezet in app.js). */
@@ -354,7 +388,7 @@ a:hover { color: #000; }
   gap: 8px 16px;
   flex-wrap: wrap;
   margin-top: 16px;
-  font-size: 12.5px;
+  font-size: var(--tekst-klein);
   color: var(--grijs);
 }
 .legenda > span {
@@ -372,8 +406,8 @@ a:hover { color: #000; }
 
 .live-status {
   margin: 14px 0 0;
-  font-size: 11.5px;
-  color: var(--grijs-vaag);
+  font-size: var(--tekst-mini);
+  color: var(--grijs-licht);
   text-align: right;
 }
 
@@ -381,7 +415,7 @@ a:hover { color: #000; }
 
 dialog {
   border: none;
-  border-radius: 16px;
+  border-radius: var(--radius-groot);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
   padding: 0;
   width: min(94vw, 540px);
@@ -431,21 +465,21 @@ body:has(dialog[open]) { overflow: hidden; }
   border-bottom: 1px solid var(--rand);
 }
 .dialoog-sublabel {
-  font-size: 12.5px;
+  font-size: var(--tekst-klein);
   color: var(--grijs-licht);
   margin-bottom: 2px;
 }
 .dialoog-titel {
   font-weight: 700;
-  font-size: 19px;
+  font-size: var(--tekst-titel);
 }
 .dialoog-sluit {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-klein);
   border: 1px solid rgba(0, 0, 0, 0.1);
   background: var(--kaart);
-  font-size: 14px;
+  font-size: var(--tekst-basis);
   color: var(--grijs);
   cursor: pointer;
   flex: none;
@@ -462,11 +496,11 @@ body:has(dialog[open]) { overflow: hidden; }
 /* Melding in het formulier voor de weekdagregels (ma-do). */
 .weekdag-info {
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: #fdf6e3;
   border: 1px solid #f0dfad;
   margin: 0 0 14px;
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
 }
 
 .veld {
@@ -481,15 +515,15 @@ body:has(dialog[open]) { overflow: hidden; }
 }
 .veld label {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
 }
 .veld input, .veld select, .veld textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--rand-invoer);
-  border-radius: 10px;
+  border-radius: var(--radius);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--tekst-basis);
   background: var(--kaart);
   color: var(--inkt);
   transition: border-color var(--duur-kort) var(--vloeiend),
@@ -498,18 +532,18 @@ body:has(dialog[open]) { overflow: hidden; }
 .veld input:focus, .veld select:focus, .veld textarea:focus {
   border-color: var(--groen);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(46, 158, 79, 0.15);
+  box-shadow: 0 0 0 3px rgba(35, 128, 62, 0.15);
 }
 .veld textarea { resize: vertical; }
 .veld small, .extra-detail small {
-  font-size: 11.5px;
+  font-size: var(--tekst-mini);
   color: var(--grijs-licht);
 }
 
 /* Extra opties */
 .extra-opties {
   border: 1px solid rgba(0, 0, 0, 0.09);
-  border-radius: 12px;
+  border-radius: var(--radius);
   overflow: hidden;
   padding: 0;
   margin: 0;
@@ -519,7 +553,7 @@ body:has(dialog[open]) { overflow: hidden; }
   background: var(--zacht);
   border-bottom: 1px solid var(--rand);
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
 }
 .extra-kop span {
   font-weight: 400;
@@ -533,7 +567,7 @@ body:has(dialog[open]) { overflow: hidden; }
 .extra-vraag {
   display: block;
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   margin-bottom: 7px;
 }
 
@@ -547,7 +581,7 @@ body:has(dialog[open]) { overflow: hidden; }
   padding: 8px 16px;
   border-radius: 99px;
   border: 1px solid rgba(0, 0, 0, 0.14);
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   color: var(--grijs);
   cursor: pointer;
   transition: border-color var(--duur-kort) var(--vloeiend),
@@ -580,7 +614,7 @@ body:has(dialog[open]) { overflow: hidden; }
   align-items: center;
   gap: 8px;
   min-height: 28px;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   font-weight: 400;
 }
 .keuze-kolom input { accent-color: var(--groen); }
@@ -595,7 +629,7 @@ body:has(dialog[open]) { overflow: hidden; }
   grid-template-rows: 1fr;
   margin-top: 10px;
   opacity: 1;
-  font-size: 12.5px;
+  font-size: var(--tekst-klein);
   color: var(--grijs);
   line-height: 1.5;
   transition: grid-template-rows var(--duur-lang) var(--vloeiend),
@@ -608,7 +642,7 @@ body:has(dialog[open]) { overflow: hidden; }
   overflow: hidden;
   padding: 10px 12px;
   background: var(--zacht);
-  border-radius: 10px;
+  border-radius: var(--radius);
   transform: translateY(0);
   transition: padding-top var(--duur-lang) var(--vloeiend),
               padding-bottom var(--duur-lang) var(--vloeiend),
@@ -633,13 +667,13 @@ body:has(dialog[open]) { overflow: hidden; }
   align-items: center;
 }
 .gerecht-rij + .gerecht-rij { margin-top: 6px; }
-.gerecht-rij label { font-size: 12.5px; }
+.gerecht-rij label { font-size: var(--tekst-klein); }
 .gerecht-rij input {
   padding: 7px 10px;
   border: 1px solid var(--rand-invoer);
-  border-radius: 8px;
+  border-radius: var(--radius-klein);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   width: 100%;
   transition: border-color var(--duur-kort) var(--vloeiend),
               box-shadow var(--duur-kort) var(--vloeiend);
@@ -647,20 +681,20 @@ body:has(dialog[open]) { overflow: hidden; }
 .gerecht-rij input:focus {
   border-color: var(--groen);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(46, 158, 79, 0.15);
+  box-shadow: 0 0 0 3px rgba(35, 128, 62, 0.15);
 }
 
 /* Prijsoverzicht */
 .prijs-info {
   background: var(--groen-bg);
   border: 1px solid var(--groen-rand);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 14px 16px;
 }
 #prijs-regels div {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   color: var(--groen-tekst);
   padding: 2px 0;
 }
@@ -674,11 +708,11 @@ body:has(dialog[open]) { overflow: hidden; }
 }
 .prijs-totaal-rij span {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--tekst-basis);
   color: var(--groen-diep);
 }
 .prijs-totaal-rij strong {
-  font-size: 20px;
+  font-size: var(--tekst-titel);
   font-weight: 700;
   color: var(--groen-diep);
   display: inline-block; /* nodig om te kunnen schalen bij de prijs-pop */
@@ -689,7 +723,7 @@ body:has(dialog[open]) { overflow: hidden; }
   50% { transform: scale(1.1); }
 }
 .prijs-info p {
-  font-size: 12px;
+  font-size: var(--tekst-mini);
   color: var(--groen-tekst);
   line-height: 1.55;
   margin: 6px 0 0;
@@ -699,7 +733,7 @@ body:has(dialog[open]) { overflow: hidden; }
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  font-size: 12.5px;
+  font-size: var(--tekst-klein);
   line-height: 1.5;
   color: #3f3c36;
 }
@@ -712,9 +746,9 @@ body:has(dialog[open]) { overflow: hidden; }
 .formulier-fout {
   background: #fdeeed;
   border: 1px solid #f2c4c1;
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 10px 14px;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   margin: 0;
   animation: verschijn var(--duur-normaal) var(--vloeiend);
 }
@@ -726,7 +760,7 @@ body:has(dialog[open]) { overflow: hidden; }
 }
 .dialoog-knoppen button {
   min-height: 46px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font: inherit;
   cursor: pointer;
 }
@@ -734,7 +768,7 @@ body:has(dialog[open]) { overflow: hidden; }
   padding: 0 18px;
   border: 1px solid var(--rand-knop);
   background: var(--kaart);
-  font-size: 14px;
+  font-size: var(--tekst-basis);
   color: var(--grijs);
 }
 #annuleer-knop:hover { border-color: rgba(0, 0, 0, 0.3); }
@@ -743,7 +777,7 @@ body:has(dialog[open]) { overflow: hidden; }
   border: none;
   background: var(--groen);
   color: #fff;
-  font-size: 14.5px;
+  font-size: var(--tekst-basis);
   font-weight: 600;
 }
 .dialoog-knoppen button.primair:hover { background: var(--groen-donker); }
@@ -763,7 +797,7 @@ body:has(dialog[open]) { overflow: hidden; }
   max-width: 400px;
   background: var(--kaart);
   border: 1px solid var(--rand);
-  border-radius: 16px;
+  border-radius: var(--radius-groot);
   padding: 32px;
 }
 .login-kaart img {
@@ -773,12 +807,12 @@ body:has(dialog[open]) { overflow: hidden; }
   margin-bottom: 18px;
 }
 .login-kaart h1 {
-  font-size: 20px;
+  font-size: var(--tekst-titel);
   font-weight: 700;
   margin: 0 0 6px;
 }
 .login-kaart p {
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
   color: var(--grijs);
   line-height: 1.55;
   margin: 0 0 20px;
@@ -786,32 +820,32 @@ body:has(dialog[open]) { overflow: hidden; }
 .login-formulier label {
   display: block;
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   margin-bottom: 5px;
 }
 .login-formulier input {
   width: 100%;
   padding: 11px 12px;
   border: 1px solid var(--rand-invoer);
-  border-radius: 10px;
+  border-radius: var(--radius);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--tekst-basis);
   transition: border-color var(--duur-kort) var(--vloeiend),
               box-shadow var(--duur-kort) var(--vloeiend);
 }
 .login-formulier input:focus {
   border-color: var(--groen);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(46, 158, 79, 0.15);
+  box-shadow: 0 0 0 3px rgba(35, 128, 62, 0.15);
 }
 .login-formulier button {
   margin-top: 14px;
   min-height: 46px;
-  font-size: 14.5px;
+  font-size: var(--tekst-basis);
 }
 #login-status {
   margin: 14px 0 0;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   color: var(--grijs);
 }
 
@@ -823,24 +857,24 @@ body:has(dialog[open]) { overflow: hidden; }
   gap: 16px;
   margin-bottom: 20px;
 }
-.stat { padding: 18px 20px; border-radius: 12px; }
+.stat { padding: 18px 20px; border-radius: var(--radius); }
 .stat-label {
-  font-size: 12.5px;
+  font-size: var(--tekst-klein);
   color: var(--grijs-licht);
   margin-bottom: 6px;
 }
 .stat-waarde {
-  font-size: 28px;
+  font-size: var(--tekst-cijfer);
   font-weight: 700;
   line-height: 1;
 }
 .stat-volgend {
-  font-size: 17px;
+  font-size: var(--tekst-groot);
   font-weight: 600;
   line-height: 1.3;
 }
 .stat-volgend .stat-sub {
-  font-size: 12.5px;
+  font-size: var(--tekst-klein);
   font-weight: 400;
   color: var(--grijs-licht);
 }
@@ -852,7 +886,7 @@ body:has(dialog[open]) { overflow: hidden; }
   align-items: start;
   margin-bottom: 20px;
 }
-.beheer-indeling .kaart { border-radius: 12px; }
+.beheer-indeling .kaart { border-radius: var(--radius); }
 
 .dag.bezet.klikbaar { cursor: pointer; }
 .dag.bezet.klikbaar:hover, .dag.bezet.klikbaar:focus-visible {
@@ -872,11 +906,11 @@ body:has(dialog[open]) { overflow: hidden; }
 }
 .detail-kop h2 {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--tekst-groot);
   font-weight: 700;
 }
 .pil-status {
-  font-size: 12px;
+  font-size: var(--tekst-mini);
   font-weight: 600;
   color: var(--groen);
   background: var(--groen-bg);
@@ -886,7 +920,7 @@ body:has(dialog[open]) { overflow: hidden; }
   white-space: nowrap;
 }
 .detail-subtitel {
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   color: var(--grijs-licht);
   margin: 0 0 16px;
 }
@@ -901,7 +935,7 @@ body:has(dialog[open]) { overflow: hidden; }
   gap: 14px;
   padding: 7px 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
   min-width: 0;
 }
 .detail-rij .label {
@@ -920,8 +954,8 @@ body:has(dialog[open]) { overflow: hidden; }
   padding: 12px 14px;
   background: var(--zacht);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 10px;
-  font-size: 13.5px;
+  border-radius: var(--radius);
+  font-size: var(--tekst-basis);
   color: var(--grijs-licht);
 }
 .prijs-blok {
@@ -929,7 +963,7 @@ body:has(dialog[open]) { overflow: hidden; }
   padding: 12px 14px;
   background: var(--zacht);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 /* Bij een oude boeking blijven prijsblok en voetnoot leeg: dan niet tonen. */
 .prijs-blok:empty,
@@ -939,7 +973,7 @@ body:has(dialog[open]) { overflow: hidden; }
 .prijs-blok .prijs-regel {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   padding: 2px 0;
 }
 .prijs-blok .prijs-regel .label { color: var(--grijs-licht); }
@@ -952,11 +986,11 @@ body:has(dialog[open]) { overflow: hidden; }
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 .prijs-blok .prijs-totaal .label {
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   color: var(--grijs-licht);
 }
 .prijs-blok .prijs-totaal .bedrag {
-  font-size: 19px;
+  font-size: var(--tekst-titel);
   font-weight: 700;
 }
 .detail-voet {
@@ -965,8 +999,8 @@ body:has(dialog[open]) { overflow: hidden; }
   gap: 12px;
   flex-wrap: wrap;
   margin-top: 12px;
-  font-size: 12px;
-  color: var(--grijs-vaag);
+  font-size: var(--tekst-mini);
+  color: var(--grijs-licht);
 }
 .detail-acties {
   display: none;
@@ -979,9 +1013,9 @@ body:has(dialog[open]) { overflow: hidden; }
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
   text-decoration: none;
 }
 .detail-acties .actie-bellen {
@@ -1004,14 +1038,14 @@ body:has(dialog[open]) { overflow: hidden; }
 }
 .komende-kop h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--tekst-groot);
   font-weight: 700;
 }
 .komende-kop select {
   font: inherit;
-  font-size: 13px;
+  font-size: var(--tekst-klein);
   padding: 7px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-klein);
   border: 1px solid var(--rand-knop);
   background: var(--kaart);
   color: var(--inkt);
@@ -1028,7 +1062,7 @@ body:has(dialog[open]) { overflow: hidden; }
   width: 100%;
   text-align: left;
   border: 1px solid var(--rand);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 10px 12px;
   background: var(--kaart);
   font: inherit;
@@ -1038,7 +1072,7 @@ body:has(dialog[open]) { overflow: hidden; }
 .komende-datum {
   width: 42px;
   height: 42px;
-  border-radius: 9px;
+  border-radius: var(--radius-klein);
   background: var(--bg);
   display: flex;
   flex-direction: column;
@@ -1049,10 +1083,10 @@ body:has(dialog[open]) { overflow: hidden; }
 }
 .komende-datum .dag-nr {
   font-weight: 700;
-  font-size: 16px;
+  font-size: var(--tekst-groot);
 }
 .komende-datum .maand-kort {
-  font-size: 9.5px;
+  font-size: 10px;
   color: var(--grijs-licht);
   text-transform: uppercase;
 }
@@ -1060,21 +1094,21 @@ body:has(dialog[open]) { overflow: hidden; }
 .komende-titel {
   display: block;
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
 }
 .komende-meta {
   display: block;
-  font-size: 12px;
+  font-size: var(--tekst-mini);
   color: var(--grijs-licht);
 }
 .komende-bedrag {
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
   white-space: nowrap;
 }
 #komende-leeg {
   margin: 0;
-  font-size: 13.5px;
+  font-size: var(--tekst-basis);
   color: var(--grijs-licht);
 }
 
@@ -1111,15 +1145,26 @@ body:has(dialog[open]) { overflow: hidden; }
 /* ---------- Responsief ---------- */
 
 @media (max-width: 900px) {
+  :root {
+    --tekst-kop: 26px;
+    --tekst-cijfer: 22px;
+  }
   .topbalk { padding: 14px 18px; }
   .topbalk-links img { height: 32px; }
   .pagina { padding: 24px 16px 40px; }
-  .pagina h1 { font-size: 26px; }
   .indeling, .beheer-indeling { grid-template-columns: 1fr; }
   .statistieken { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .stat-waarde { font-size: 22px; }
   .detail-lijst { grid-template-columns: 1fr; }
   .detail-acties { display: flex; }
+
+  /* Aanraakschermen: velden minstens 16px (anders zoomt iOS Safari in bij
+     focus) en bladerknoppen/sluitknop minstens 44px groot. */
+  .veld input, .veld select, .veld textarea,
+  .gerecht-rij input, .login-formulier input, .komende-kop select {
+    font-size: var(--tekst-groot);
+  }
+  .kalender-kop button { width: 44px; height: 44px; }
+  .dialoog-sluit { width: 44px; height: 44px; }
 }
 
 @media (max-width: 480px) {

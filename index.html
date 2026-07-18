@@ -9,13 +9,14 @@
        project ooit verhuist (zie ook supabase-config.js). -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self';
     script-src 'self' https://challenges.cloudflare.com;
-    frame-src https://challenges.cloudflare.com;
+    frame-src https://challenges.cloudflare.com https://www.google.com/maps;
     style-src 'self' https://fonts.googleapis.com;
     font-src https://fonts.gstatic.com;
     img-src 'self';
     connect-src 'self' https://mbvvqdvsspersyjzuyqi.supabase.co wss://mbvvqdvsspersyjzuyqi.supabase.co https://challenges.cloudflare.com;
     object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Reserveer jouw privéfeest – 8-duust</title>
+  <link rel="icon" type="image/webp" href="assets/duust-logo.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -83,6 +84,22 @@
             <li>Tot 1,5 uur vooraf inrichten</li>
             <li>€ 60 reservatiekosten, direct online (o.a. Bancontact)</li>
           </ul>
+        </section>
+
+        <section class="kaart locatie-kaart">
+          <h2>Waar vind je ons?</h2>
+          <p class="locatie-adres">Polderstraat 76 A<br>8310 Sint-Kruis (Brugge)</p>
+          <iframe
+            class="locatie-kaartje"
+            src="https://www.google.com/maps?q=Polderstraat%2076A%2C%208310%20Sint-Kruis%2C%20Brugge&hl=nl&output=embed"
+            title="Kaart: Polderstraat 76 A, 8310 Sint-Kruis (Brugge)"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen></iframe>
+          <a class="knop-groen" target="_blank" rel="noopener"
+             href="https://www.google.com/maps/search/?api=1&query=Polderstraat%2076A%2C%208310%20Sint-Kruis%2C%20Brugge">
+            Route via Google Maps
+          </a>
         </section>
       </aside>
     </main>
@@ -250,10 +267,9 @@
         <label class="akkoord">
           <input type="checkbox" id="akkoord" required>
           <span>
-            Ik ga akkoord met het totaalbedrag hierboven en begrijp dat de
-            reservatiekosten van € 60 niet worden terugbetaald, behalve wanneer de
-            organisatie zelf de reservering annuleert — in dat geval wordt het
-            volledige bedrag teruggestort. *
+            Ik ga akkoord met het totaalbedrag en begrijp dat de € 60
+            reservatiekosten niet worden terugbetaald (behalve bij annulering
+            door de organisatie). *
           </span>
         </label>
 
