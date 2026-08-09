@@ -1,6 +1,7 @@
 // Beheerportaal: alleen-lezen overzicht van alle betaalde reserveringen voor
-// de organisatie. Inloggen gaat met een magic link (Supabase Auth); wie
-// daarna op de allowlist "beheerders" staat, mag via RLS de details lezen.
+// de organisatie. Inloggen gaat via Supabase Auth — met Google (één klik) of
+// met een code van 6 cijfers per e-mail; wie daarna op de allowlist
+// "beheerders" staat, mag via RLS de details lezen.
 import { supabaseConfig } from './supabase-config.js';
 
 // Datumhelpers en maandnamen zijn bewust gekopieerd uit app.js: de publieke
@@ -69,6 +70,12 @@ const loginFormulierEl = document.getElementById('login-formulier');
 const loginEmailEl = document.getElementById('login-email');
 const loginKnopEl = document.getElementById('login-knop');
 const loginStatusEl = document.getElementById('login-status');
+const googleKnopEl = document.getElementById('google-knop');
+const codeFormulierEl = document.getElementById('code-formulier');
+const loginCodeEl = document.getElementById('login-code');
+const codeKnopEl = document.getElementById('code-knop');
+const anderAdresKnopEl = document.getElementById('ander-adres-knop');
+const loginScheidingEl = document.getElementById('login-scheiding');
 const portaalSectieEl = document.getElementById('portaal-sectie');
 const portaalInhoudEl = document.getElementById('portaal-inhoud');
 const ingelogdAlsEl = document.getElementById('ingelogd-als');
@@ -112,6 +119,7 @@ let reserveringen = {}; // datumstring -> details van een betaalde reservering
 let getoondeMaand = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let geselecteerdeDatum = null;
 let portaalGestart = false;
+let codeEmail = ''; // adres waarnaar de laatste inlogcode is verstuurd
 
 // ---------- Kalender ----------
 
@@ -484,14 +492,18 @@ async function startPortaal(session) {
   portaalGestart = true;
 
   // Eerst controleren of dit account op de allowlist staat; anders zou de
-  // beheerder alleen een verwarrend lege kalender zien.
+  // beheerder alleen een verwarrend lege kalender zien. Bij Google-inloggen
+  // kan iedereen een account krijgen, dus melden we het en loggen we meteen
+  // weer uit — de allowlist blijft de echte grendel (RLS in de databank).
   const { data: isBeheerder, error } = await client.rpc('is_beheerder');
   if (error || !isBeheerder) {
+    portaalGestart = false;
     portaalInhoudEl.classList.add('verborgen');
     toonFoutBanner(
       `Het account ${session.user.email} heeft geen toegang tot het beheer. ` +
       'Neem contact op met de organisatie.'
     );
+    await client.auth.signOut(); // toont via onAuthStateChange weer het inlogscherm
     return;
   }
 
@@ -511,6 +523,20 @@ async function startPortaal(session) {
 function toonLogin() {
   portaalSectieEl.classList.add('verborgen');
   loginSectieEl.classList.remove('verborgen');
+  toonEmailStap();
+}
+
+// Terug naar stap 1 (e-mailadres). Een eventuele foutbanner blijft staan:
+// die vertelt net waarom je hier weer bent.
+function toonEmailStap() {
+  codeEmail = '';
+  codeFormulierEl.classList.add('verborgen');
+  loginFormulierEl.classList.remove('verborgen');
+  loginStatusEl.classList.add('verborgen');
+  loginCodeEl.value = '';
+  loginKnopEl.disabled = false;
+  codeKnopEl.disabled = false;
+  googleKnopEl.disabled = false;
 }
 
 // ---------- Opstarten ----------
@@ -528,8 +554,9 @@ async function init() {
 
   // De bibliotheek wordt zelf gehost (assets/supabase-js-*.min.js, geladen in
   // beheer.html) en zet één globaal object neer — geen externe CDN.
-  // De standaardinstellingen (sessie bewaren + magic-link-tokens uit de URL
-  // oppikken) zijn precies wat we nodig hebben.
+  // De standaardinstellingen (sessie bewaren + tokens uit de URL oppikken, of
+  // die nu van een inloglink of van Google komen) zijn precies wat we nodig
+  // hebben.
   const { createClient } = window.supabase;
   client = createClient(supabaseConfig.url, supabaseConfig.anonKey);
 
@@ -538,15 +565,41 @@ async function init() {
     window.location.reload(); // schone start, ook voor realtime-kanalen
   });
 
+  // Inloggen met Google: één klik, geen mail. De browser navigeert weg naar
+  // Google en komt daarna terug op deze pagina, waar supabase-js de sessie
+  // uit de URL oppikt (zie onAuthStateChange onderaan). Staat de provider in
+  // Supabase nog niet ingesteld, dan blijft de knop verborgen — anders zou hij
+  // alleen maar een foutmelding kunnen tonen.
+  if (supabaseConfig.googleInloggen) {
+    googleKnopEl.classList.remove('verborgen');
+    loginScheidingEl.classList.remove('verborgen');
+  }
+
+  googleKnopEl.addEventListener('click', async () => {
+    verbergFoutBanner();
+    googleKnopEl.disabled = true;
+    const { error } = await client.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) {
+      googleKnopEl.disabled = false;
+      toonFoutBanner('Inloggen met Google mislukt: ' + error.message);
+    }
+  });
+
   loginFormulierEl.addEventListener('submit', async (e) => {
     e.preventDefault();
+    verbergFoutBanner();
     const email = loginEmailEl.value.trim();
     loginKnopEl.disabled = true;
     loginStatusEl.classList.remove('verborgen');
-    loginStatusEl.textContent = 'Inloglink wordt verstuurd…';
+    loginStatusEl.textContent = 'Inlogcode wordt verstuurd…';
 
-    // shouldCreateUser: false → alleen bestaande accounts (de 2 beheerders)
-    // krijgen een link; er ontstaan geen losse accounts van vreemden.
+    // shouldCreateUser: false → alleen bestaande accounts (de beheerders)
+    // krijgen een code; er ontstaan geen losse accounts van vreemden.
+    // Dezelfde mail bevat ook nog een inloglink; wie die aanklikt op dit
+    // toestel is meteen binnen, de code is er voor alle andere gevallen.
     const { error } = await client.auth.signInWithOtp({
       email,
       options: {
@@ -558,11 +611,53 @@ async function init() {
     if (error) {
       loginStatusEl.textContent = /not allowed|not found|signups/i.test(error.message)
         ? 'Dit e-mailadres heeft geen toegang tot het beheer.'
-        : 'Inloglink versturen mislukt: ' + error.message;
+        : 'Inlogcode versturen mislukt: ' + error.message;
       return;
     }
+
+    codeEmail = email;
+    loginFormulierEl.classList.add('verborgen');
+    codeFormulierEl.classList.remove('verborgen');
+    loginCodeEl.value = '';
+    loginCodeEl.focus();
     loginStatusEl.textContent =
-      `Inloglink verstuurd naar ${email}. Open de link op dit toestel om in te loggen.`;
+      `Code verstuurd naar ${email}. Vul de 6 cijfers uit de mail hierboven in.`;
+  });
+
+  // Alleen cijfers in het codeveld, zodat plakken uit de mail ("Code: 123456")
+  // ook gewoon werkt.
+  loginCodeEl.addEventListener('input', () => {
+    const opgeschoond = loginCodeEl.value.replace(/\D/g, '').slice(0, 6);
+    if (opgeschoond !== loginCodeEl.value) loginCodeEl.value = opgeschoond;
+  });
+
+  codeFormulierEl.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = loginCodeEl.value.replace(/\D/g, '');
+    if (code.length !== 6) {
+      loginStatusEl.textContent = 'Vul de 6 cijfers uit de mail in.';
+      return;
+    }
+    codeKnopEl.disabled = true;
+    loginStatusEl.textContent = 'Code controleren…';
+
+    const { error } = await client.auth.verifyOtp({
+      email: codeEmail,
+      token: code,
+      type: 'email'
+    });
+    codeKnopEl.disabled = false;
+    if (error) {
+      loginStatusEl.textContent =
+        'Deze code klopt niet of is verlopen. Vraag eventueel een nieuwe aan.';
+      return;
+    }
+    // Gelukt: onAuthStateChange start het portaal.
+  });
+
+  anderAdresKnopEl.addEventListener('click', () => {
+    toonEmailStap();
+    loginEmailEl.focus();
   });
 
   document.getElementById('vorige-maand').addEventListener('click', () => {
@@ -578,7 +673,8 @@ async function init() {
     renderKomendeLijst();
   });
 
-  // Bij het laden van de pagina én na het aanklikken van de magic link.
+  // Bij het laden van de pagina, na het invullen van de code, na het
+  // aanklikken van de inloglink én bij terugkeer van Google.
   client.auth.onAuthStateChange((_event, session) => {
     if (session) startPortaal(session);
     else toonLogin();

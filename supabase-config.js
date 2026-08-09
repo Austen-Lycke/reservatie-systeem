@@ -10,5 +10,11 @@ export const supabaseConfig = {
   // Optioneel: Cloudflare Turnstile (gratis anti-bot-controle op het
   // reserveringsformulier). Vul hier de SITE key in en zet de SECRET key als
   // Supabase-secret TURNSTILE_SECRET_KEY — zie README. Leeg = uitgeschakeld.
-  turnstileSiteKey: ""
+  turnstileSiteKey: "",
+
+  // Optioneel: knop "Verder met Google" op het beheerportaal. Zet pas op true
+  // nadat de Google-provider in Supabase is ingesteld (zie HANDLEIDING-INTERN,
+  // deel 4A) — anders toont de knop een foutmelding. Zolang dit false is,
+  // logt de organisatie in met een code van 6 cijfers per e-mail.
+  googleInloggen: false
 };

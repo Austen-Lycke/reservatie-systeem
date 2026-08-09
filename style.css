@@ -852,6 +852,72 @@ body:has(dialog[open]) { overflow: hidden; }
   color: var(--grijs);
 }
 
+/* Google-knop: witte knop met het officiële logo, zoals gebruikers ze
+   overal kennen. */
+.knop-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  border-radius: var(--radius);
+  border: 1px solid var(--rand-invoer);
+  background: var(--kaart);
+  color: var(--inkt);
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--tekst-basis);
+  cursor: pointer;
+  transition: background var(--duur-kort) var(--vloeiend),
+              border-color var(--duur-kort) var(--vloeiend);
+}
+.knop-google:hover { background: var(--zacht); border-color: var(--rand-knop); }
+.knop-google:disabled { opacity: 0.6; cursor: default; }
+
+/* "of met e-mail" met een lijntje links en rechts. */
+.login-scheiding {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  font-size: var(--tekst-klein);
+  color: var(--grijs);
+}
+.login-scheiding::before,
+.login-scheiding::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rand-invoer);
+}
+
+/* Codeveld: grote, gespatieerde cijfers, zodat je in één oogopslag ziet of
+   je de code goed hebt overgetypt. */
+.login-formulier .code-invoer {
+  text-align: center;
+  font-size: var(--tekst-cijfer);
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em; /* compenseert de spatie achter het laatste cijfer */
+}
+
+.login-formulier .knop-tekst {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  min-height: 40px;
+  border: none;
+  background: none;
+  color: var(--grijs);
+  font: inherit;
+  font-size: var(--tekst-klein);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.login-formulier .knop-tekst:hover { color: var(--inkt); }
+
 /* ---------- Beheer: portaal ---------- */
 
 .statistieken {
