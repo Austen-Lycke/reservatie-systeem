@@ -1,0 +1,103 @@
+<!--
+  Inlogmail van het beheerportaal (Supabase → Authentication → Emails →
+  Magic Link). Deze mail staat NIET in de code van de site: hij wordt door
+  Supabase zelf verstuurd. Wijzig je hier iets, plak de volledige inhoud
+  dan opnieuw in het dashboard — anders verandert er niets aan de echte mail.
+
+  Supabase vult zelf in:
+    {{ .Token }}            de inlogcode van 6 cijfers
+    {{ .ConfirmationURL }}  de directe inloglink
+    {{ .Email }}            het adres waarnaar de mail ging
+
+  Stijl gelijk aan de reservatiemail: tabellen + inline stijlen, want dat is
+  het enige dat in Outlook, Gmail en Apple Mail hetzelfde oogt. Kleuren komen
+  uit style.css (groen #23803e, inkt #1c1b18, papier #f6f5f2).
+-->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>Inloggen bij het beheerportaal</title>
+<!--[if mso]><style>table,td,div,p,a{font-family:Arial,Helvetica,sans-serif !important;}</style><![endif]-->
+<style>
+  @media only screen and (max-width:620px){
+    .p-out{padding-left:12px !important;padding-right:12px !important;}
+    .p-in{padding-left:20px !important;padding-right:20px !important;}
+    .code{font-size:32px !important;letter-spacing:6px !important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#f6f5f2">
+<span style="display:none;font-size:1px;color:#f6f5f2;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">Je inlogcode voor het beheerportaal is {{ .Token }} — geldig gedurende één uur.</span>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f5f2">
+<tr><td align="center" class="p-out" style="padding:24px 16px 40px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:600px">
+
+  <tr><td style="padding:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:16px;color:#6f6b63;letter-spacing:0.06em;text-transform:uppercase">8-Duust &nbsp;&middot;&nbsp; Beheerportaal</td></tr>
+
+  <tr><td class="p-in" style="background:#23803e;border-radius:16px 16px 0 0;padding:26px 28px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:18px;color:#cfe6d6;mso-line-height-rule:exactly">Aanvraag om in te loggen</td></tr>
+      <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:32px;font-weight:bold;color:#ffffff;padding-top:6px;mso-line-height-rule:exactly">Je inlogcode</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;border-left:1px solid #e6e3dc;border-right:1px solid #e6e3dc;padding:26px 28px 6px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:22px;color:#1c1b18">Vul deze code in op de inlogpagina van het beheerportaal:</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;border-left:1px solid #e6e3dc;border-right:1px solid #e6e3dc;padding:14px 28px 20px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#eef6f0;border:1px solid #d3e8da;border-radius:10px">
+      <tr><td align="center" style="padding:20px 18px 18px">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:16px;color:#3d5a47;text-transform:uppercase;letter-spacing:0.06em;padding-bottom:8px">Inlogcode</td></tr>
+          <tr><td align="center" class="code" style="font-family:Arial,Helvetica,sans-serif;font-size:38px;line-height:44px;font-weight:bold;color:#15481f;letter-spacing:8px;mso-line-height-rule:exactly">{{ .Token }}</td></tr>
+          <tr><td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#3d5a47;padding-top:10px">Geldig gedurende &eacute;&eacute;n uur, voor &eacute;&eacute;n keer inloggen.</td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;border-left:1px solid #e6e3dc;border-right:1px solid #e6e3dc;padding:0 28px 4px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td width="38%" style="width:38%;padding:0"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td height="1" style="height:1px;background:#eceae4;font-size:0;line-height:0">&nbsp;</td></tr></table></td>
+        <td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:16px;color:#6f6b63;text-transform:uppercase;letter-spacing:0.06em;padding:0 10px">of</td>
+        <td width="38%" style="width:38%;padding:0"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td height="1" style="height:1px;background:#eceae4;font-size:0;line-height:0">&nbsp;</td></tr></table></td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;border-left:1px solid #e6e3dc;border-right:1px solid #e6e3dc;padding:16px 28px 8px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td align="center" bgcolor="#23803e" style="border-radius:10px">
+        <a href="{{ .ConfirmationURL }}" style="display:block;padding:13px 18px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:20px;font-weight:bold;color:#ffffff;text-decoration:none">Meteen inloggen</a>
+      </td></tr>
+      <tr><td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#6f6b63;padding-top:10px">Werkt de knop niet? Gebruik dan gewoon de code hierboven.</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;border-left:1px solid #e6e3dc;border-right:1px solid #e6e3dc;padding:18px 28px 22px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#faf9f6;border:1px solid #eceae4;border-radius:10px">
+      <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#6f6b63">Deze mail ging naar <strong style="color:#1c1b18">{{ .Email }}</strong>. Heb je zelf niet proberen inloggen? Dan hoef je niets te doen &mdash; zonder de code of de link komt er niemand binnen. Geef de code aan niemand door.</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;border:1px solid #e6e3dc;border-top:none;border-radius:0 0 16px 16px;padding:0 28px 24px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td style="border-top:1px solid #f0eee8;padding-top:16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#6f6b63">In het beheerportaal bekijk je alle reservaties, de betalingen en de kalender.</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:16px 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;color:#8a857c">Automatisch verstuurd door het reserveringssysteem van 8-Duust.</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>
