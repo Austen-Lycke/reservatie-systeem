@@ -624,10 +624,28 @@ async function init() {
       `Code verstuurd naar ${email}. Vul de 6 cijfers uit de mail hierboven in.`;
   });
 
-  // Alleen cijfers in het codeveld, zodat plakken uit de mail ("Code: 123456")
-  // ook gewoon werkt.
+  // De code uit een geplakte tekst vissen. Wie de hele regel uit de mail
+  // meeneemt ("Inlogcode 482913") moet gewoon binnen raken, dus zoeken we
+  // eerst naar een losstaande groep van precies zes cijfers. Staat die er
+  // niet, dan houden we de eerste zes cijfers over.
+  function codeUitTekst(tekst) {
+    const losseGroep = String(tekst).match(/(?:^|\D)(\d{6})(?:\D|$)/);
+    return losseGroep ? losseGroep[1] : String(tekst).replace(/\D/g, '').slice(0, 6);
+  }
+
+  // Plakken vangen we zelf op. Het veld heeft bewust geen maxlength meer:
+  // die knipte de tekst af vóór we de cijfers eruit konden halen, waardoor
+  // een geplakte code leeg in het veld belandde.
+  loginCodeEl.addEventListener('paste', (e) => {
+    const tekst = e.clipboardData ? e.clipboardData.getData('text') : '';
+    if (!tekst) return;
+    e.preventDefault();
+    loginCodeEl.value = codeUitTekst(tekst);
+  });
+
+  // Typen (en autofill): alleen cijfers, hoogstens zes.
   loginCodeEl.addEventListener('input', () => {
-    const opgeschoond = loginCodeEl.value.replace(/\D/g, '').slice(0, 6);
+    const opgeschoond = codeUitTekst(loginCodeEl.value);
     if (opgeschoond !== loginCodeEl.value) loginCodeEl.value = opgeschoond;
   });
 

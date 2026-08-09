@@ -57,7 +57,10 @@
            een ander toestel binnenkomt dan waarop je wil inloggen. -->
       <form id="code-formulier" class="login-formulier verborgen">
         <label for="login-code">Inlogcode</label>
-        <input type="text" id="login-code" required maxlength="6" inputmode="numeric"
+        <!-- Bewust géén maxlength: die knipte een geplakte regel ("Inlogcode
+             482913") af tot zes tekens vóórdat het script de cijfers eruit kon
+             halen, waardoor er niets overbleef. Het script bewaakt de lengte. -->
+        <input type="text" id="login-code" required inputmode="numeric"
                pattern="[0-9]{6}" autocomplete="one-time-code" class="code-invoer">
         <button type="submit" id="code-knop" class="knop-groen">Inloggen</button>
         <button type="button" id="ander-adres-knop" class="knop-tekst">Ander e-mailadres</button>
