@@ -1,8 +1,9 @@
 // Edge function "mollie-webhook": wordt door Mollie aangeroepen zodra de
 // status van een betaling verandert. Bevestigt de reservering (rood) bij
 // een geslaagde betaling, of geeft de datum weer vrij als de betaling is
-// afgebroken, mislukt of verlopen. Na een geslaagde betaling gaat er ook
-// een e-mail met alle reservatiegegevens naar de organisatie.
+// afgebroken, mislukt of verlopen. Na een geslaagde betaling gaan er twee
+// e-mails uit: één met alle reservatiegegevens naar de organisatie en één
+// bevestiging naar de klant (Mollie mailt klanten namelijk zelf niet).
 //
 // Belangrijk: deze functie moet bereikbaar zijn ZONDER Supabase-JWT
 // (verify_jwt = false), anders kan Mollie hem niet aanroepen.
@@ -18,6 +19,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const EMAIL_ONTVANGER = 'info@8-duust.be';
 const BEHEER_URL = 'https://reserveren.8-duust.be/beheer.html';
+const ORG_TELEFOON = '+32 475 41 93 77';
+const ORG_ADRES = 'Polderstraat 76A, 8310 Sint-Kruis (Brugge)';
 
 // Weergaveteksten voor de extra opties in de mail. Alleen labels — de
 // bedragen komen uit de prijsregels die bij het boeken zijn vastgelegd.
@@ -234,8 +237,139 @@ function bouwMailHtml(opties: {
 </html>`;
 }
 
-// Stuurt de bevestigingsmail naar de organisatie. Mag nooit de webhook laten
-// falen: bij problemen loggen we alleen (de reservering is dan al bevestigd).
+// Bevestigingsmail voor de klant, in dezelfde stijl als de organisatiemail.
+// Mollie stuurt zelf geen betaalbevestiging naar consumenten, dus dit is de
+// enige schriftelijke bevestiging die de klant krijgt.
+function bouwKlantMailHtml(opties: {
+  datumMooi: string;
+  samenvatting: string;
+  naam: string;
+  detailRijen: [string, string][];
+  prijsregels: [string, string][];
+  totaal: string;
+  betalingId: string;
+}): string {
+  const { datumMooi, samenvatting, naam, detailRijen, prijsregels, totaal, betalingId } = opties;
+
+  const tel = telHref(ORG_TELEFOON);
+  const mailto = mailtoHref(EMAIL_ONTVANGER);
+
+  const detailHtml = detailRijen
+    .map(([label, waarde], i) => detailRij(label, waarde, i === detailRijen.length - 1))
+    .join('');
+  const prijsHtml = prijsregels.map(([label, bedrag]) => prijsRij(label, bedrag)).join('');
+
+  return `<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>Bevestiging van je reservering</title>
+<!--[if mso]><style>table,td,div,p,a{font-family:Arial,Helvetica,sans-serif !important;}</style><![endif]-->
+<style>
+  @media only screen and (max-width:620px){
+    .p-out{padding-left:12px !important;padding-right:12px !important;}
+    .p-in{padding-left:20px !important;padding-right:20px !important;}
+    .stack{display:block !important;width:100% !important;}
+    .stack-gap{height:10px !important;line-height:10px !important;}
+    .hero-date{font-size:24px !important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#f6f5f2">
+<span style="display:none;font-size:1px;color:#f6f5f2;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">Je betaling is goed ontvangen — ${datumMooi} is definitief van jou.</span>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f5f2">
+<tr><td align="center" class="p-out" style="padding:24px 16px 40px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:600px">
+
+  <tr><td style="padding:0 0 10px;font-family:${FONT};font-size:12px;line-height:16px;color:#6f6b63;letter-spacing:0.06em;text-transform:uppercase">8-Duust &nbsp;·&nbsp; Zaalverhuur</td></tr>
+
+  <tr><td class="p-in" style="background:#23803e;border-radius:16px 16px 0 0;padding:26px 28px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td style="font-family:${FONT};font-size:13px;line-height:18px;color:#cfe6d6;mso-line-height-rule:exactly">Betaling geslaagd · de datum is definitief van jou</td></tr>
+      <tr><td style="font-family:${FONT};font-size:26px;line-height:32px;font-weight:bold;color:#ffffff;padding-top:6px;mso-line-height-rule:exactly">Bedankt voor je reservering!</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;${KADER_ZIJ};padding:26px 28px 22px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td style="font-family:${FONT};font-size:12px;line-height:16px;color:#6f6b63;text-transform:uppercase;letter-spacing:0.06em">Feestdatum</td></tr>
+      <tr><td class="hero-date" style="font-family:${FONT};font-size:28px;line-height:34px;font-weight:bold;color:#1c1b18;padding-top:4px;mso-line-height-rule:exactly">${datumMooi}</td></tr>
+      ${samenvatting ? `<tr><td style="font-family:${FONT};font-size:15px;line-height:22px;color:#1c1b18;padding-top:6px">${samenvatting}</td></tr>` : ''}
+      <tr><td style="font-family:${FONT};font-size:14px;line-height:22px;color:#6f6b63;padding-top:14px">Dag ${naam}, we hebben je betaling goed ontvangen. Je reservering staat hiermee definitief vast — hieronder vind je alle gegevens nog eens op een rij.</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;${KADER_ZIJ};padding:0 28px 8px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td colspan="2" style="font-family:${FONT};font-size:12px;line-height:16px;color:#6f6b63;text-transform:uppercase;letter-spacing:0.06em;padding-bottom:6px">Je reservering</td></tr>
+      ${detailHtml}
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;${KADER_ZIJ};padding:20px 28px 26px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#eef6f0;border:1px solid #d3e8da;border-radius:10px">
+      <tr><td style="padding:16px 18px 14px">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td colspan="2" style="font-family:${FONT};font-size:12px;line-height:16px;color:#3d5a47;text-transform:uppercase;letter-spacing:0.06em;padding-bottom:8px">Betaald via Mollie</td></tr>
+          ${prijsHtml}
+          <tr><td colspan="2" style="padding:8px 0 0;border-top:1px solid #c4dccd">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr><td style="font-family:${FONT};font-size:14px;line-height:24px;font-weight:bold;color:#15481f">Totaal betaald</td>
+                  <td align="right" style="font-family:${FONT};font-size:20px;line-height:24px;font-weight:bold;color:#15481f">${totaal}</td></tr>
+            </table>
+          </td></tr>
+          <tr><td colspan="2" style="font-family:${FONT};font-size:12px;line-height:18px;color:#3d5a47;padding-top:8px">Betaling ${betalingId} · bewaar deze mail als betaalbewijs</td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td class="p-in" style="background:#ffffff;border:1px solid #e6e3dc;border-top:none;border-radius:0 0 16px 16px;padding:18px 28px 22px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td style="font-family:${FONT};font-size:13px;line-height:20px;color:#6f6b63">Vragen over je reservering? Bel <a href="${tel}" style="color:#1a5c2d;text-decoration:underline">${escapeHtml(ORG_TELEFOON)}</a> of mail naar <a href="${mailto}" style="color:#1a5c2d;text-decoration:underline">${EMAIL_ONTVANGER}</a>.<br>Adres van de zaal: ${escapeHtml(ORG_ADRES)}.</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:16px 8px 0;font-family:${FONT};font-size:12px;line-height:18px;color:#8a857c">Automatisch verstuurd door het reserveringssysteem van 8-Duust.</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+// Eén mail versturen via Resend. Fouten alleen loggen: een mislukte mail mag
+// de webhook nooit laten falen (de reservering zelf is dan al bevestigd).
+async function verstuurMail(
+  resendSleutel: string,
+  bericht: { from: string; to: string[]; reply_to?: string; subject: string; html: string },
+  omschrijving: string
+): Promise<void> {
+  try {
+    const antwoord = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendSleutel}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bericht)
+    });
+    if (!antwoord.ok) {
+      console.error(`${omschrijving} versturen mislukt:`, antwoord.status,
+        await antwoord.text().catch(() => '?'));
+    }
+  } catch (fout) {
+    console.error(`${omschrijving} versturen mislukt:`, fout);
+  }
+}
+
+// Stuurt de bevestigingsmails (organisatie + klant). Mag nooit de webhook
+// laten falen: bij problemen loggen we alleen (de reservering is dan al
+// bevestigd).
 async function stuurBevestigingsmail(
   details: Record<string, unknown>,
   datum: string,
@@ -317,36 +451,49 @@ async function stuurBevestigingsmail(
     prijsregels.push(['Reservatiekosten', `€ ${Number(details.totaal_bedrag ?? 60)}`]);
   }
 
-  const html = bouwMailHtml({
+  const totaal = `€ ${Number(details.totaal_bedrag ?? 60)}`;
+  const klantEmail = String(details.email ?? '').trim();
+
+  const organisatieHtml = bouwMailHtml({
     datumMooi: escapeHtml(datumMooi),
     samenvatting,
     naam: toon(details.naam),
-    email: String(details.email ?? '').trim(),
+    email: klantEmail,
     telefoon: String(details.telefoon ?? '').trim(),
     detailRijen,
     prijsregels,
-    totaal: `€ ${Number(details.totaal_bedrag ?? 60)}`,
+    totaal,
     betalingId: toon(betalingId)
   });
 
-  const antwoord = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${resendSleutel}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      from: afzender,
-      to: [EMAIL_ONTVANGER],
-      reply_to: String(details.email ?? '') || undefined,
-      subject: `Nieuwe reservatie: ${datumMooi} — ${String(details.naam ?? '').trim()}`,
-      html
-    })
-  });
+  await verstuurMail(resendSleutel, {
+    from: afzender,
+    to: [EMAIL_ONTVANGER],
+    reply_to: klantEmail || undefined,
+    subject: `Nieuwe reservatie: ${datumMooi} — ${String(details.naam ?? '').trim()}`,
+    html: organisatieHtml
+  }, 'Organisatiemail');
 
-  if (!antwoord.ok) {
-    console.error('Bevestigingsmail versturen mislukt:', antwoord.status,
-      await antwoord.text().catch(() => '?'));
+  // Bevestiging voor de klant zelf: Mollie mailt consumenten niet, dus
+  // zonder deze mail heeft de klant niets op papier.
+  if (klantEmail) {
+    const klantHtml = bouwKlantMailHtml({
+      datumMooi: escapeHtml(datumMooi),
+      samenvatting,
+      naam: toon(details.naam),
+      detailRijen,
+      prijsregels,
+      totaal,
+      betalingId: toon(betalingId)
+    });
+
+    await verstuurMail(resendSleutel, {
+      from: afzender,
+      to: [klantEmail],
+      reply_to: EMAIL_ONTVANGER,
+      subject: `Je reservering voor ${datumMooi} is bevestigd`,
+      html: klantHtml
+    }, 'Klantmail');
   }
 }
 
