@@ -786,6 +786,59 @@ body:has(dialog[open]) { overflow: hidden; }
 .dialoog-knoppen button.primair:hover { background: var(--groen-donker); }
 .dialoog-knoppen button:disabled { opacity: 0.6; cursor: default; }
 
+/* ---------- Betaalstatus-dialoog (na terugkeer van Mollie) ---------- */
+
+.betaling-body {
+  align-items: center;
+  text-align: center;
+  padding-top: 28px;
+}
+.betaling-body p {
+  margin: 0;
+  max-width: 42ch;
+  color: var(--grijs);
+  font-size: var(--tekst-basis);
+  line-height: 1.55;
+}
+.betaling-body .dialoog-knoppen {
+  width: 100%;
+  margin-top: 8px;
+}
+.betaling-icoon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+  flex: none;
+}
+.betaling-icoon.is-controle {
+  border: 4px solid var(--groen-bg);
+  border-top-color: var(--groen);
+  animation: betaling-draai 0.9s linear infinite;
+}
+@keyframes betaling-draai {
+  to { transform: rotate(360deg); }
+}
+.betaling-icoon.is-gelukt {
+  background: var(--groen-bg);
+  color: var(--groen-donker);
+}
+.betaling-icoon.is-gelukt::before { content: "✓"; }
+.betaling-icoon.is-verwerking {
+  background: #fdf6e3;
+  color: var(--geel-tekst);
+}
+.betaling-icoon.is-verwerking::before { content: "⋯"; }
+.betaling-icoon.is-mislukt {
+  background: #fdeeed;
+  color: var(--rood);
+}
+.betaling-icoon.is-mislukt::before { content: "✕"; }
+
 /* ---------- Beheer: inloggen ---------- */
 
 .login-scherm {

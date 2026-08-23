@@ -365,6 +365,7 @@ const maandTitelEl = document.getElementById('maand-titel');
 const dialoogEl = document.getElementById('reserveer-dialoog');
 const formulierEl = document.getElementById('reserveer-formulier');
 const formulierFoutEl = document.getElementById('formulier-fout');
+const betalingDialoogEl = document.getElementById('betaling-dialoog');
 const toastEl = document.getElementById('toast');
 
 function vandaagString() {
@@ -774,26 +775,73 @@ async function verwerkFormulier(event) {
   }
 }
 
+// De vier statussen van de betaaldialoog na terugkeer van Mollie. Bij
+// 'controle' is de dialoog niet handmatig te sluiten via de knoppen (Esc kan
+// wel — het eindresultaat opent de dialoog dan gewoon opnieuw).
+const BETALING_STATUSSEN = {
+  controle: {
+    sublabel: 'Reservering',
+    titel: 'Even geduld…',
+    tekst: (datum) => `We controleren je betaling voor ${datumMooi(datum)} bij Mollie. ` +
+      'Dit duurt meestal maar een paar seconden.',
+    sluitbaar: false
+  },
+  gelukt: {
+    sublabel: 'Betaling gelukt',
+    titel: 'Bedankt voor je reservering!',
+    tekst: (datum) => `Je reservering voor ${datumMooi(datum)} is definitief. ` +
+      'We hebben je een bevestigingsmail gestuurd met alle gegevens. ' +
+      'Je hoeft verder niets meer te doen.',
+    sluitbaar: true
+  },
+  verwerking: {
+    sublabel: 'Reservering',
+    titel: 'Je betaling wordt nog verwerkt',
+    tekst: (datum) => `De bevestiging van je betaling voor ${datumMooi(datum)} laat even ` +
+      'op zich wachten; dit kan een paar minuten duren. Zodra de betaling bevestigd is, ' +
+      'is je reservering definitief en ontvang je automatisch een bevestigingsmail ' +
+      'met alle gegevens — je hoeft niets opnieuw te doen.',
+    sluitbaar: true
+  },
+  mislukt: {
+    sublabel: 'Reservering',
+    titel: 'Betaling niet afgerond',
+    tekst: (datum) => `De betaling voor ${datumMooi(datum)} is niet afgerond. ` +
+      'De datum is weer vrijgegeven — je kunt opnieuw reserveren als je wilt.',
+    sluitbaar: true
+  }
+};
+
+function toonBetalingsDialoog(status, datum) {
+  const info = BETALING_STATUSSEN[status];
+  document.getElementById('betaling-sublabel').textContent = info.sublabel;
+  document.getElementById('betaling-titel').textContent = info.titel;
+  document.getElementById('betaling-tekst').textContent = info.tekst(datum);
+  document.getElementById('betaling-icoon').className = `betaling-icoon is-${status}`;
+  document.getElementById('betaling-sluit-knop').classList.toggle('verborgen', !info.sluitbaar);
+  document.getElementById('betaling-knoppen').classList.toggle('verborgen', !info.sluitbaar);
+  if (!betalingDialoogEl.open) betalingDialoogEl.showModal();
+}
+
 // Na terugkeer van de Mollie-betaalpagina: kijken of de betaling gelukt is.
 // De webhook kan een paar seconden achterlopen, dus we kijken zo nodig
-// een aantal keer opnieuw.
+// een aantal keer opnieuw. De dialoog opent meteen, zodat de bezoeker nooit
+// op een "lege" kalender belandt zonder te weten of de betaling gelukt is.
 async function verwerkBetalingsTerugkeer(datum) {
+  toonBetalingsDialoog('controle', datum);
   for (let poging = 0; poging < 15; poging++) {
     const rij = await opslag.haalStatus(datum);
     if (rij === null) {
-      toonFoutBanner(`De betaling voor ${datumMooi(datum)} is niet afgerond. ` +
-        'De datum is weer vrijgegeven — je kunt het opnieuw proberen.');
+      toonBetalingsDialoog('mislukt', datum);
       return;
     }
     if (rij && (rij.status || STATUS_BETAALD) === STATUS_BETAALD) {
-      toonToast(`Betaling gelukt! Je reservering voor ${datumMooi(datum)} is definitief. ` +
-        'Je ontvangt de betaalbevestiging van Mollie per e-mail.');
+      toonBetalingsDialoog('gelukt', datum);
       return;
     }
     await new Promise((klaar) => setTimeout(klaar, 2000));
   }
-  toonToast('Je betaling wordt nog verwerkt. De kalender werkt automatisch bij ' +
-    'zodra de betaling bevestigd is.');
+  toonBetalingsDialoog('verwerking', datum);
 }
 
 // Laat de kalender kort invegen in de bladerrichting. Alleen bij handmatig
@@ -817,6 +865,8 @@ function koppelGebeurtenissen() {
   });
   document.getElementById('annuleer-knop').addEventListener('click', sluitDialoog);
   document.getElementById('sluit-knop').addEventListener('click', sluitDialoog);
+  document.getElementById('betaling-sluit-knop').addEventListener('click', () => betalingDialoogEl.close());
+  document.getElementById('betaling-ok-knop').addEventListener('click', () => betalingDialoogEl.close());
   // Vangt ook sluiten via Esc af, niet alleen via de annuleerknop.
   dialoogEl.addEventListener('close', stopTypeFeestAnimatie);
   formulierEl.addEventListener('submit', verwerkFormulier);

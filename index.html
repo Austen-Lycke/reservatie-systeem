@@ -303,6 +303,27 @@
     </form>
   </dialog>
 
+  <!-- Statusdialoog na terugkeer van de Mollie-betaalpagina. Opent meteen
+       met "we controleren je betaling" en slaat daarna om naar het resultaat
+       (bedankt / nog in verwerking / niet afgerond). Inhoud wordt per status
+       gezet in app.js (toonBetalingsDialoog). -->
+  <dialog id="betaling-dialoog">
+    <div class="dialoog-kop">
+      <div>
+        <div class="dialoog-sublabel" id="betaling-sublabel"></div>
+        <div class="dialoog-titel" id="betaling-titel"></div>
+      </div>
+      <button type="button" id="betaling-sluit-knop" class="dialoog-sluit" aria-label="Sluiten">✕</button>
+    </div>
+    <div class="dialoog-body betaling-body">
+      <div id="betaling-icoon" class="betaling-icoon" aria-hidden="true"></div>
+      <p id="betaling-tekst"></p>
+      <div class="dialoog-knoppen" id="betaling-knoppen">
+        <button type="button" id="betaling-ok-knop" class="primair">Sluiten</button>
+      </div>
+    </div>
+  </dialog>
+
   <div id="toast" class="toast toast-verborgen"></div>
 
   <!-- Zelf-gehoste kopie van @supabase/supabase-js (vaste versie) in plaats
