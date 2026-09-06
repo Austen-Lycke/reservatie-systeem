@@ -406,6 +406,7 @@ function renderKalender() {
 
   const vandaag = vandaagString();
   const eersteBoekbaar = eersteBoekbareDatumString();
+  let vrijeDagen = 0;
   for (let dag = 1; dag <= dagenInMaand; dag++) {
     const datumStr = datumNaarString(new Date(jaar, maand, dag));
     const cel = document.createElement('div');
@@ -426,7 +427,7 @@ function renderKalender() {
       cel.title = 'Reserveren kan tot uiterlijk 2 dagen vooraf';
     } else {
       cel.className = 'dag beschikbaar';
-      cel.title = 'Beschikbaar – klik om te reserveren';
+      cel.title = 'Vrij – klik om te reserveren';
       cel.tabIndex = 0;
       cel.setAttribute('role', 'button');
       cel.addEventListener('click', () => openDialoog(datumStr));
@@ -436,8 +437,25 @@ function renderKalender() {
           openDialoog(datumStr);
         }
       });
+      vrijeDagen++;
     }
-    if (datumStr === vandaag) cel.classList.add('vandaag');
+    // Bezet en "betaling loopt" dragen naast hun lichte kleur ook een
+    // vormmarkering (vierkantje / rondje), zodat de staten ook zonder
+    // kleurzicht uit elkaar te houden zijn.
+    if (status && datumStr >= vandaag) {
+      const marker = document.createElement('span');
+      marker.className = 'dag-marker';
+      marker.setAttribute('aria-hidden', 'true');
+      cel.appendChild(marker);
+    }
+    if (datumStr === vandaag) {
+      cel.classList.add('vandaag');
+      const label = document.createElement('span');
+      label.className = 'dag-vandaag-label';
+      label.textContent = 'vandaag';
+      cel.appendChild(label);
+    }
+    if (datumStr === geselecteerdeDatum) cel.classList.add('geselecteerd');
     // Op aanraakschermen bestaat er geen hover-title: wie op een grijze,
     // bezette of in-afwachting-dag tikt, krijgt de uitleg als toast te zien.
     if (!cel.classList.contains('beschikbaar')) {
@@ -445,6 +463,10 @@ function renderKalender() {
     }
     kalenderEl.appendChild(cel);
   }
+
+  document.getElementById('kalender-vrij').textContent =
+    vrijeDagen === 0 ? 'Geen dagen vrij' :
+    vrijeDagen === 1 ? '1 dag vrij' : `${vrijeDagen} dagen vrij`;
 }
 
 // Geanimeerde placeholder voor "Type feest": typt de voorbeelden één voor
@@ -496,7 +518,8 @@ function stopTypeFeestAnimatie() {
 
 // Toont of verbergt de detailblokken op basis van de gekozen radio's.
 // Elk blok draagt data-toon-bij="veldnaam=waarde1|waarde2". De klasse
-// 'ingeklapt' laat het blok vloeiend open- en dichtklappen (zie style.css).
+// 'ingeklapt' laat het blok vloeiend open- en dichtklappen (zie style.css);
+// het omliggende kaartje krijgt 'open' voor de scheidingslijn erboven.
 // Velden in een dichtgeklapt blok worden ook uitgeschakeld, zodat verlaten
 // waarden (bv. eerst gerechten invullen en dan toch "nee" kiezen) nooit
 // meetellen of meegaan.
@@ -506,6 +529,7 @@ function werkExtraDetailsBij() {
     const huidig = formulierEl.elements[naam]?.value;
     const zichtbaar = waarden.split('|').includes(huidig);
     blok.classList.toggle('ingeklapt', !zichtbaar);
+    blok.closest('.extra-kaart')?.classList.toggle('open', zichtbaar);
     for (const veld of blok.querySelectorAll('input')) veld.disabled = !zichtbaar;
   }
 }
@@ -553,17 +577,104 @@ function werkTotaalBij() {
   document.getElementById('prijs-regels').innerHTML = regels
     .map((regel) => `<div><span>${regel.label}</span><span>€ ${regel.bedrag}</span></div>`)
     .join('');
-  const totaalEl = document.getElementById('prijs-totaal');
-  totaalEl.textContent = `€ ${totaal}`;
-  if (vorigTotaal !== null && totaal !== vorigTotaal) {
-    totaalEl.classList.remove('pop');
-    void totaalEl.offsetWidth; // herstart de animatie
-    totaalEl.classList.add('pop');
+  // Het totaal staat twee keer: in het donkere prijsblok (stap 3) en als
+  // lopend bedrag in de voet van de dialoog (stap 1 en 2).
+  for (const totaalEl of [document.getElementById('prijs-totaal'), document.getElementById('voet-totaal')]) {
+    totaalEl.textContent = `€ ${totaal}`;
+    if (vorigTotaal !== null && totaal !== vorigTotaal) {
+      totaalEl.classList.remove('pop');
+      void totaalEl.offsetWidth; // herstart de animatie
+      totaalEl.classList.add('pop');
+    }
   }
   vorigTotaal = totaal;
   const knop = document.getElementById('bevestig-knop');
   if (!knop.disabled) knop.textContent = `Reserveren en € ${totaal} betalen`;
   return totaal;
+}
+
+// ---------- Drie stappen ----------
+
+// Stap 1: wanneer (tijden, opbouw, type, personen). Stap 2: contactgegevens.
+// Stap 3: extra's, prijsoverzicht, akkoord en betalen. Alle velden zitten in
+// één formulier; we tonen er telkens één blok van en controleren de velden
+// van dat blok vóór het doorgaan.
+const STAPPEN = {
+  1: { sublabel: 'Stap 1 van 3 · Wanneer', verder: 'Verder naar je gegevens' },
+  2: { sublabel: 'Stap 2 van 3 · Jouw gegevens', verder: 'Verder naar de extra’s' },
+  3: { sublabel: 'Stap 3 van 3 · Extra’s en betalen' }
+};
+let huidigeStap = 1;
+
+function toonStap(nummer) {
+  huidigeStap = nummer;
+  verbergFormulierFout();
+  for (const blok of formulierEl.querySelectorAll('.stap[data-stap]')) {
+    blok.hidden = Number(blok.dataset.stap) !== nummer;
+  }
+  document.querySelectorAll('.stappen-balk span').forEach((streep, i) => {
+    streep.classList.toggle('klaar', i < nummer);
+  });
+  document.getElementById('dialoog-sublabel').textContent = STAPPEN[nummer].sublabel;
+  document.getElementById('dialoog-datum').textContent =
+    nummer === 1 ? datumMooi(geselecteerdeDatum) :
+    nummer === 2 ? 'Wie reserveert?' : 'Nog iets nodig?';
+
+  const laatste = nummer === 3;
+  document.getElementById('terug-knop').classList.toggle('verborgen', nummer === 1);
+  document.getElementById('annuleer-knop').classList.toggle('verborgen', nummer !== 1);
+  document.getElementById('verder-knop').classList.toggle('verborgen', laatste);
+  document.getElementById('bevestig-knop').classList.toggle('verborgen', !laatste);
+  // In stap 3 staat het totaal al in het prijsblok; de voet krijgt dan
+  // alleen de brede betaalknop.
+  document.getElementById('voet-totaal-blok').classList.toggle('verborgen', laatste);
+  document.getElementById('dialoog-voet').classList.toggle('voet-betalen', laatste);
+  if (!laatste) document.getElementById('verder-knop').textContent = STAPPEN[nummer].verder;
+
+  dialoogEl.scrollTop = 0;
+  if (laatste) toonTurnstile();
+}
+
+// Ingebouwde browsercontrole (required, e-mail, min/max) van de velden in
+// één stap. Het formulier heeft novalidate, dus wij vragen de melding zelf
+// op bij het eerste veld dat niet klopt.
+function stapVeldenGeldig(nummer) {
+  const blok = document.getElementById(`stap-${nummer}`);
+  for (const veld of blok.querySelectorAll('input, select, textarea')) {
+    if (veld.disabled || veld.hidden) continue;
+    if (!veld.checkValidity()) {
+      veld.reportValidity();
+      return false;
+    }
+  }
+  return true;
+}
+
+// Eigen controles per stap; geeft een foutmelding of null.
+function stapFout(nummer) {
+  if (nummer === 1) {
+    const minPersonen = weekdagBoeking ? WEEKDAG_MIN_PERSONEN : WEEKEND_MIN_PERSONEN;
+    const aantalPersonen = Number(document.getElementById('aantal-personen').value);
+    if (!(aantalPersonen >= minPersonen)) {
+      return `Reserveren kan vanaf minimaal ${minPersonen} personen.`;
+    }
+    return valideerTijden(
+      document.getElementById('start-tijd').value,
+      document.getElementById('eind-tijd').value
+    );
+  }
+  if (nummer === 3) return valideerExtras(verzamelExtras());
+  return null;
+}
+
+function volgendeStap() {
+  if (!stapVeldenGeldig(huidigeStap)) return;
+  const fout = stapFout(huidigeStap);
+  if (fout) {
+    toonFormulierFout(fout);
+    return;
+  }
+  toonStap(huidigeStap + 1);
 }
 
 // Bouwt het extras-object dat naar de server gaat. De server hervalideert
@@ -621,6 +732,7 @@ function pasWeekdagRegelsToe() {
 
   const muziekSectie = document.getElementById('muziek-sectie');
   muziekSectie.classList.toggle('verborgen', weekdagBoeking);
+  document.getElementById('type-feest').placeholder = 'bv. communie';
   for (const radio of muziekSectie.querySelectorAll('input')) {
     radio.disabled = weekdagBoeking;
   }
@@ -636,34 +748,33 @@ function pasWeekdagRegelsToe() {
 function openDialoog(datumStr) {
   geselecteerdeDatum = datumStr;
   weekdagBoeking = isWeekdag(datumStr);
-  document.getElementById('dialoog-datum').textContent = datumMooi(datumStr);
   formulierEl.reset();
   vorigTotaal = null; // geen prijs-pop bij het openen van de dialoog
-  verbergFormulierFout();
   pasWeekdagRegelsToe();
   vulStartTijden();
   werkEindTijdenBij();
   werkOpbouwHintBij();
   werkExtraDetailsBij();
   werkTotaalBij();
+  toonStap(1);
+  renderKalender(); // de gekozen dag licht op in de kalender
   if (weekdagBoeking) stopTypeFeestAnimatie();
   else startTypeFeestAnimatie();
   dialoogEl.showModal();
-  toonTurnstile();
 }
 
 function sluitDialoog() {
   dialoogEl.close();
-  geselecteerdeDatum = null;
 }
 
 function toonFormulierFout(tekst) {
   formulierFoutEl.textContent = tekst;
-  formulierFoutEl.classList.remove('verborgen');
+  document.getElementById('stap-fout-houder').hidden = false;
+  formulierFoutEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function verbergFormulierFout() {
-  formulierFoutEl.classList.add('verborgen');
+  document.getElementById('stap-fout-houder').hidden = true;
 }
 
 function toonToast(tekst) {
@@ -679,9 +790,13 @@ function toonFoutBanner(tekst) {
   banner.classList.remove('verborgen');
 }
 
+function opbouwMinutenKeuze() {
+  return Number(formulierEl.elements.opbouwMinuten.value) || 0;
+}
+
 function werkOpbouwHintBij() {
   const start = document.getElementById('start-tijd').value;
-  const opbouw = Number(document.getElementById('opbouw').value);
+  const opbouw = opbouwMinutenKeuze();
   const hint = document.getElementById('opbouw-hint');
   if (start && opbouw > 0) {
     hint.textContent = `Je kunt vanaf ${minutenNaarTijd(tijdNaarMinuten(start) - opbouw)} terecht om in te richten.`;
@@ -696,6 +811,14 @@ async function verwerkFormulier(event) {
   event.preventDefault();
   verbergFormulierFout();
 
+  // Enter in een veld van stap 1 of 2 verstuurt het formulier ook; dat
+  // betekent dan gewoon "verder".
+  if (huidigeStap < 3) {
+    volgendeStap();
+    return;
+  }
+  if (!stapVeldenGeldig(3)) return;
+
   const datum = geselecteerdeDatum;
   const naam = document.getElementById('naam').value.trim();
   const email = document.getElementById('email').value.trim();
@@ -706,9 +829,11 @@ async function verwerkFormulier(event) {
   const aantalPersonen = Number(document.getElementById('aantal-personen').value);
   const startTijd = document.getElementById('start-tijd').value;
   const eindTijd = document.getElementById('eind-tijd').value;
-  const opbouwMinuten = Number(document.getElementById('opbouw').value);
+  const opbouwMinuten = opbouwMinutenKeuze();
   const opmerkingen = document.getElementById('opmerkingen').value.trim();
 
+  // Stap 1 is al gecontroleerd bij het doorgaan, maar wie teruggaat kan
+  // intussen iets veranderd hebben: daarom hier nog eens alles.
   const minPersonen = weekdagBoeking ? WEEKDAG_MIN_PERSONEN : WEEKEND_MIN_PERSONEN;
   if (!(aantalPersonen >= minPersonen)) {
     toonFormulierFout(`Reserveren kan vanaf minimaal ${minPersonen} personen.`);
@@ -754,6 +879,14 @@ async function verwerkFormulier(event) {
     const resultaat = await opslag.reserveer(datum, details);
     if (resultaat && resultaat.checkoutUrl) {
       doorsturenNaar = resultaat.checkoutUrl;
+      // Voor de bedankpagina na de betaling: de publieke kalender mag de
+      // details niet uit de databank lezen, dus onthouden we de eigen
+      // keuzes even in deze browser.
+      bewaarSamenvatting({
+        datum, startTijd, eindTijd,
+        opbouwVanaf: opbouwMinuten > 0 ? details.opbouwVanaf : null,
+        totaal: werkTotaalBij()
+      });
     } else {
       sluitDialoog();
       toonToast(`Je reservering voor ${datumMooi(datum)} is bevestigd!`);
@@ -775,50 +908,123 @@ async function verwerkFormulier(event) {
   }
 }
 
+// ---------- Samenvatting voor de bedankpagina ----------
+
+// De publieke kalender leest nooit persoonsgegevens uit de databank, dus de
+// uren en het bedrag voor de bedankpagina komen uit de eigen browser: we
+// bewaren ze vlak vóór het doorsturen naar Mollie (sessionStorage blijft
+// binnen dit tabblad en verdwijnt bij het sluiten ervan).
+const SAMENVATTING_SLEUTEL = 'reservering-samenvatting';
+
+function bewaarSamenvatting(gegevens) {
+  try { sessionStorage.setItem(SAMENVATTING_SLEUTEL, JSON.stringify(gegevens)); }
+  catch { /* privémodus of vol: dan gewoon geen detailrijen */ }
+}
+
+function leesSamenvatting(datum) {
+  try {
+    const gegevens = JSON.parse(sessionStorage.getItem(SAMENVATTING_SLEUTEL));
+    return gegevens && gegevens.datum === datum ? gegevens : null;
+  } catch {
+    return null;
+  }
+}
+
+// 'vr 18 september 2026' — voor de detailrijen op de bedankpagina.
+function datumKort(datumStr) {
+  const [j, m, d] = datumStr.split('-').map(Number);
+  return new Intl.DateTimeFormat('nl-BE', {
+    weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'
+  }).format(new Date(j, m - 1, d));
+}
+
+// '18 september' — voor de kop "De zaal is van jou op 18 september."
+function dagEnMaand(datumStr) {
+  const [, m, d] = datumStr.split('-').map(Number);
+  return `${d} ${MAANDEN[m - 1]}`;
+}
+
 // De vier statussen van de betaaldialoog na terugkeer van Mollie. Bij
 // 'controle' is de dialoog niet handmatig te sluiten via de knoppen (Esc kan
 // wel — het eindresultaat opent de dialoog dan gewoon opnieuw).
 const BETALING_STATUSSEN = {
   controle: {
     sublabel: 'Reservering',
-    titel: 'Even geduld…',
-    tekst: (datum) => `We controleren je betaling voor ${datumMooi(datum)} bij Mollie. ` +
-      'Dit duurt meestal maar een paar seconden.',
-    sluitbaar: false
+    titel: 'We controleren je betaling.',
+    tekst: (datum) => `We kijken bij Mollie na of de betaling voor ${datumMooi(datum)} gelukt is.`,
+    sluitbaar: false,
+    wachten: true
   },
   gelukt: {
     sublabel: 'Betaling gelukt',
-    titel: 'Bedankt voor je reservering!',
-    tekst: (datum) => `Je reservering voor ${datumMooi(datum)} is definitief. ` +
-      'We hebben je een bevestigingsmail gestuurd met alle gegevens. ' +
+    titel: (datum) => `De zaal is van jou op ${dagEnMaand(datum)}.`,
+    tekst: () => 'We hebben je een bevestigingsmail gestuurd met alle gegevens. ' +
       'Je hoeft verder niets meer te doen.',
+    knop: 'Terug naar de kalender',
+    details: true,
     sluitbaar: true
   },
   verwerking: {
     sublabel: 'Reservering',
-    titel: 'Je betaling wordt nog verwerkt',
+    titel: 'Je betaling wordt nog verwerkt.',
     tekst: (datum) => `De bevestiging van je betaling voor ${datumMooi(datum)} laat even ` +
       'op zich wachten; dit kan een paar minuten duren. Zodra de betaling bevestigd is, ' +
       'is je reservering definitief en ontvang je automatisch een bevestigingsmail ' +
       'met alle gegevens — je hoeft niets opnieuw te doen.',
+    knop: 'Terug naar de kalender',
     sluitbaar: true
   },
   mislukt: {
     sublabel: 'Reservering',
-    titel: 'Betaling niet afgerond',
+    titel: 'Betaling niet afgerond.',
     tekst: (datum) => `De betaling voor ${datumMooi(datum)} is niet afgerond. ` +
       'De datum is weer vrijgegeven — je kunt opnieuw reserveren als je wilt.',
+    knop: 'Opnieuw proberen',
+    knopDonker: true,
+    bellen: true,
     sluitbaar: true
   }
 };
 
 function toonBetalingsDialoog(status, datum) {
   const info = BETALING_STATUSSEN[status];
-  document.getElementById('betaling-sublabel').textContent = info.sublabel;
-  document.getElementById('betaling-titel').textContent = info.titel;
+  const sublabel = document.getElementById('betaling-sublabel');
+  sublabel.textContent = info.sublabel;
+  sublabel.classList.toggle('is-gelukt', status === 'gelukt');
+  document.getElementById('betaling-titel').textContent =
+    typeof info.titel === 'function' ? info.titel(datum) : info.titel;
   document.getElementById('betaling-tekst').textContent = info.tekst(datum);
-  document.getElementById('betaling-icoon').className = `betaling-icoon is-${status}`;
-  document.getElementById('betaling-sluit-knop').classList.toggle('verborgen', !info.sluitbaar);
+  document.getElementById('betaling-wacht').classList.toggle('verborgen', !info.wachten);
+
+  // Detailrijen (datum, uren, betaald) — alleen bij een geslaagde betaling,
+  // en de uren en het bedrag alleen als dit tabblad ze nog kent.
+  const detailsEl = document.getElementById('betaling-details');
+  detailsEl.innerHTML = '';
+  if (info.details) {
+    const samenvatting = leesSamenvatting(datum);
+    const rijen = [['Datum', datumKort(datum)]];
+    if (samenvatting) {
+      let uren = `${samenvatting.startTijd}–${samenvatting.eindTijd}`;
+      if (samenvatting.opbouwVanaf) uren += ` · opbouw ${samenvatting.opbouwVanaf}`;
+      rijen.push(['Uren', uren]);
+      rijen.push(['Betaald', `€ ${samenvatting.totaal}`]);
+    }
+    for (const [label, waarde] of rijen) {
+      const rij = document.createElement('div');
+      const labelEl = document.createElement('span');
+      labelEl.textContent = label;
+      const waardeEl = document.createElement('span');
+      waardeEl.textContent = waarde;
+      rij.append(labelEl, waardeEl);
+      detailsEl.appendChild(rij);
+    }
+  }
+
+  const okKnop = document.getElementById('betaling-ok-knop');
+  okKnop.textContent = info.knop || 'Sluiten';
+  okKnop.classList.toggle('knop-donker', Boolean(info.knopDonker));
+  okKnop.classList.toggle('knop-rood', !info.knopDonker);
+  document.getElementById('betaling-bel-knop').classList.toggle('verborgen', !info.bellen);
   document.getElementById('betaling-knoppen').classList.toggle('verborgen', !info.sluitbaar);
   if (!betalingDialoogEl.open) betalingDialoogEl.showModal();
 }
@@ -865,16 +1071,24 @@ function koppelGebeurtenissen() {
   });
   document.getElementById('annuleer-knop').addEventListener('click', sluitDialoog);
   document.getElementById('sluit-knop').addEventListener('click', sluitDialoog);
-  document.getElementById('betaling-sluit-knop').addEventListener('click', () => betalingDialoogEl.close());
+  document.getElementById('verder-knop').addEventListener('click', volgendeStap);
+  document.getElementById('terug-knop').addEventListener('click', () => toonStap(huidigeStap - 1));
   document.getElementById('betaling-ok-knop').addEventListener('click', () => betalingDialoogEl.close());
-  // Vangt ook sluiten via Esc af, niet alleen via de annuleerknop.
-  dialoogEl.addEventListener('close', stopTypeFeestAnimatie);
+  // Vangt ook sluiten via Esc af, niet alleen via de annuleerknop. De
+  // gekozen dag licht dan niet langer op in de kalender.
+  dialoogEl.addEventListener('close', () => {
+    stopTypeFeestAnimatie();
+    geselecteerdeDatum = null;
+    renderKalender();
+  });
   formulierEl.addEventListener('submit', verwerkFormulier);
   document.getElementById('start-tijd').addEventListener('change', () => {
     werkEindTijdenBij();
     werkOpbouwHintBij();
   });
-  document.getElementById('opbouw').addEventListener('change', werkOpbouwHintBij);
+  for (const radio of formulierEl.querySelectorAll('input[name="opbouwMinuten"]')) {
+    radio.addEventListener('change', werkOpbouwHintBij);
+  }
   // Eén gedelegeerde listener voor alle extra opties: 'input' vuurt zowel
   // voor radio's als voor de aantal-velden.
   document.querySelector('.extra-opties').addEventListener('input', () => {
@@ -895,7 +1109,7 @@ async function start() {
     reserveringen = alles;
     renderKalender();
     document.getElementById('live-status').textContent =
-      `Live verbonden — laatst bijgewerkt ${new Date().toLocaleTimeString('nl-NL')}`;
+      `Live bijgewerkt om ${new Date().toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
   const modusBanner = document.getElementById('modus-banner');

@@ -15,133 +15,192 @@
     img-src 'self';
     connect-src 'self' https://mbvvqdvsspersyjzuyqi.supabase.co wss://mbvvqdvsspersyjzuyqi.supabase.co https://challenges.cloudflare.com;
     object-src 'none'; base-uri 'self'; form-action 'self'">
-  <title>Reserveer jouw privéfeest – 8-duust</title>
+  <title>Reserveer jouw privéfeest – 8-Duust</title>
   <link rel="icon" type="image/webp" href="assets/duust-logo.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbalk">
-    <div class="topbalk-links">
-      <img src="assets/duust-logo.webp" alt="8-duust">
-      <span class="topbalk-label">Zaalverhuur</span>
+  <!-- Kop zoals op 8-duust.be -->
+  <header class="site-kop">
+    <div class="site-kop-inhoud">
+      <a class="site-logo" href="https://www.8-duust.be">
+        <img src="assets/8duust-logo.webp" alt="8-Duust">
+      </a>
+      <nav class="site-nav" aria-label="Hoofdnavigatie">
+        <a href="https://www.8-duust.be">Home</a>
+        <a href="https://www.8-duust.be/over-ons">Over ons</a>
+        <a href="https://www.8-duust.be/de-zaal" class="actief">De zaal</a>
+        <a href="https://www.8-duust.be/projecten">Projecten</a>
+        <a href="https://www.8-duust.be/agenda">Agenda</a>
+        <a href="https://www.8-duust.be/contact">Contact</a>
+        <a href="https://www.8-duust.be/kerstmarkt-sijsele" class="nav-pil"><span aria-hidden="true">✦</span>Kerstmarkt</a>
+      </nav>
+      <a class="knop-bel" href="tel:+32475419377">+32 475 41 93 77</a>
     </div>
-    <a class="topbalk-telefoon" href="tel:+32475419377">📞 +32 475 41 93 77</a>
   </header>
 
   <div class="pagina">
     <div id="modus-banner" class="banner verborgen"></div>
     <div id="fout-banner" class="banner banner-fout verborgen"></div>
 
-    <h1>Reserveer jouw privéfeest</h1>
-    <p class="intro">
-      Kies een <strong class="groen">groene</strong> dag in de kalender.
-      Je betaalt € 60 reservatiekosten meteen online en de datum is
-      definitief van jou.
-    </p>
+    <div class="titelblok">
+      <div>
+        <p class="label-klein">Zaalverhuur · Sint-Kruis</p>
+        <h1>Reserveer jouw privéfeest</h1>
+      </div>
+      <p class="intro">
+        Kies een dag, vul je gegevens in en betaal € 60 reservatiekosten
+        online. De datum is dan definitief van jou — één feest per dag,
+        nooit dubbel geboekt.
+      </p>
+    </div>
 
     <main class="indeling">
       <section class="kaart kalender-sectie">
         <div class="kalender-kop">
-          <button id="vorige-maand" type="button" aria-label="Vorige maand">‹</button>
-          <h2 id="maand-titel"></h2>
-          <button id="volgende-maand" type="button" aria-label="Volgende maand">›</button>
+          <div class="kalender-titel">
+            <h2 id="maand-titel"></h2>
+            <span id="kalender-vrij" class="kalender-vrij"></span>
+          </div>
+          <div class="kalender-knoppen">
+            <button id="vorige-maand" type="button" aria-label="Vorige maand">‹</button>
+            <button id="volgende-maand" type="button" aria-label="Volgende maand">›</button>
+          </div>
         </div>
 
-        <div class="weekdagen">
-          <div>ma</div><div>di</div><div>wo</div><div>do</div><div>vr</div><div>za</div><div>zo</div>
+        <div class="kalender-body">
+          <div class="weekdagen">
+            <div>ma</div><div>di</div><div>wo</div><div>do</div><div>vr</div><div>za</div><div>zo</div>
+          </div>
+          <div id="kalender" class="kalender"></div>
         </div>
-        <div id="kalender" class="kalender"></div>
 
-        <div class="legenda">
-          <span><span class="legenda-blok beschikbaar"></span> Beschikbaar</span>
-          <span><span class="legenda-blok bezet"></span> Bezet</span>
-          <span><span class="legenda-blok in-afwachting"></span> Betaling in behandeling</span>
-          <span><span class="legenda-blok niet-beschikbaar"></span> Niet beschikbaar</span>
+        <div class="kalender-voet">
+          <div class="legenda">
+            <span><span class="legenda-blok beschikbaar" aria-hidden="true"></span>Vrij — klik om te reserveren</span>
+            <span><span class="legenda-blok bezet" aria-hidden="true"><span class="dag-marker"></span></span>Bezet</span>
+            <span><span class="legenda-blok in-afwachting" aria-hidden="true"><span class="dag-marker"></span></span>Betaling loopt</span>
+            <span><span class="legenda-blok niet-beschikbaar" aria-hidden="true"></span>Te kort dag of voorbij</span>
+          </div>
+          <p id="live-status" class="live-status"></p>
         </div>
-        <p id="live-status" class="live-status"></p>
       </section>
 
       <aside class="zijkolom">
-        <section class="kaart bezoek-kaart">
-          <h2>Eerst de zaal bezoeken?</h2>
-          <p>
-            Dat kan uiteraard — wij leiden u graag rond en beantwoorden al
-            uw vragen. Neem vooraf even contact op.
+        <section class="kaart info-kaart">
+          <p class="label-klein">Goed om te weten</p>
+          <div class="info-rijen">
+            <div class="info-rij"><span>Reserveren tot</span><span>2 dagen vooraf</span></div>
+            <div class="info-rij"><span>Per dag</span><span>één feest</span></div>
+            <div class="info-rij"><span>Eindtijd</span><span>uiterlijk 02:00</span></div>
+            <div class="info-rij"><span>Inrichten</span><span>tot 1,5 u vooraf</span></div>
+            <div class="info-rij"><span>Reservatiekosten</span><span>€ 60</span></div>
+          </div>
+          <p class="info-voet">
+            Ma t/m do verhuren we enkel voor teambuildings en vergaderingen,
+            tussen 10:00 en 18:00.
           </p>
-          <a class="knop-groen" href="tel:+32475419377">Bel +32 475 41 93 77</a>
         </section>
 
-        <section class="kaart info-kaart">
-          <h2>Goed om te weten</h2>
-          <ul>
-            <li>Reserveren kan tot uiterlijk 2 dagen vooraf</li>
-            <li>Maximaal 1 feest per dag</li>
-            <li>Eindtijd uiterlijk 02:00 &rsquo;s nachts</li>
-            <li>Ma t/m do: enkel teambuildings en vergaderingen, 10:00&ndash;18:00</li>
-            <li>Tot 1,5 uur vooraf inrichten</li>
-            <li>€ 60 reservatiekosten, direct online (o.a. Bancontact)</li>
-          </ul>
+        <section class="kaart kaart-donker bezoek-kaart">
+          <p class="label-klein">Eerst komen kijken?</p>
+          <p>Wij leiden je graag rond en beantwoorden al je vragen. Bel even vooraf.</p>
+          <a class="knop-wit" href="tel:+32475419377">Bel +32 475 41 93 77</a>
         </section>
 
         <section class="kaart locatie-kaart">
-          <h2>Waar vind je ons?</h2>
-          <p class="locatie-adres">Polderstraat 76 A<br>8310 Sint-Kruis (Brugge)</p>
+          <p class="label-klein">Kom langs</p>
+          <p class="locatie-adres">Polderstraat 76A<br>8310 Sint-Kruis Brugge</p>
+          <p class="locatie-parking">400+ gratis parkeerplaatsen.</p>
           <iframe
             class="locatie-kaartje"
             src="https://www.google.com/maps?q=Polderstraat%2076A%2C%208310%20Sint-Kruis%2C%20Brugge&hl=nl&output=embed"
-            title="Kaart: Polderstraat 76 A, 8310 Sint-Kruis (Brugge)"
+            title="Kaart: Polderstraat 76A, 8310 Sint-Kruis (Brugge)"
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
             allowfullscreen></iframe>
-          <a class="knop-groen" target="_blank" rel="noopener"
+          <a class="knop-rand" target="_blank" rel="noopener"
              href="https://www.google.com/maps/search/?api=1&query=Polderstraat%2076A%2C%208310%20Sint-Kruis%2C%20Brugge">
-            Route via Google Maps
+            Route <span aria-hidden="true">→</span>
           </a>
         </section>
       </aside>
     </main>
-
-    <footer class="site-voet">
-      <p>
-        Ontworpen en gemaakt door
-        <a href="https://studioringtail.com" target="_blank" rel="noopener">Studio Ringtail</a>
-      </p>
-    </footer>
   </div>
 
+  <!-- Voet zoals op 8-duust.be -->
+  <footer class="site-voet">
+    <div class="site-voet-inhoud">
+      <div class="voet-kolommen">
+        <div>
+          <p class="label-klein">Kom langs</p>
+          <p class="voet-adres">Polderstraat 76A<br>8310 Sint-Kruis Brugge</p>
+          <p class="voet-parking">400+ gratis parkeerplaatsen.</p>
+        </div>
+        <div>
+          <p class="label-klein">Bellen gaat sneller</p>
+          <div class="voet-links voet-contact">
+            <a href="tel:+32475419377">+32 475 41 93 77</a>
+            <a href="mailto:info@8-duust.be">info@8-duust.be</a>
+          </div>
+        </div>
+        <div>
+          <p class="label-klein">Op de site</p>
+          <div class="voet-links">
+            <a href="https://www.8-duust.be">Home</a>
+            <a href="https://www.8-duust.be/over-ons">Over ons</a>
+            <a href="https://www.8-duust.be/de-zaal">De zaal</a>
+            <a href="https://www.8-duust.be/agenda">Agenda</a>
+            <a href="https://www.8-duust.be/contact">Contact</a>
+          </div>
+        </div>
+        <div>
+          <p class="label-klein">Documenten</p>
+          <div class="voet-links">
+            <a href="https://www.8-duust.be/algemene-voorwaarden">Algemene voorwaarden</a>
+            <a href="https://www.8-duust.be/privacy">Privacyverklaring</a>
+            <a href="https://www.8-duust.be/wettelijke-vermeldingen">Wettelijke vermeldingen</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="voet-woord" aria-hidden="true">8-Duust</div>
+
+      <div class="voet-onder">
+        <div class="voet-onder-rij">
+          <span>VZW 8-Duust · Polderstraat 76A · 8310 Sint-Kruis Brugge</span>
+          <span>Ondernemingsnummer 1020.955.781 · RPR Gent, afdeling Brugge</span>
+        </div>
+        <div class="voet-onder-rij">
+          <a href="https://www.studioringtail.com" target="_blank" rel="noreferrer">Ontworpen en gebouwd door Studio Ringtail</a>
+          <span>Tegen verborgen armoede in Brugge</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Reserveren in drie stappen: wanneer → jouw gegevens → extra's en
+       betalen. Alle velden zitten in één formulier; app.js toont per stap
+       één blok en controleert de velden van die stap vóór het doorgaan. -->
   <dialog id="reserveer-dialoog">
-    <form id="reserveer-formulier" method="dialog">
+    <form id="reserveer-formulier" method="dialog" novalidate>
       <div class="dialoog-kop">
         <div>
-          <div class="dialoog-sublabel">Reservering voor</div>
-          <div class="dialoog-titel" id="dialoog-datum"></div>
+          <p class="label-klein" id="dialoog-sublabel">Stap 1 van 3 · Wanneer</p>
+          <h2 class="dialoog-titel" id="dialoog-datum"></h2>
         </div>
         <button type="button" id="sluit-knop" class="dialoog-sluit" aria-label="Sluiten">✕</button>
       </div>
 
-      <div class="dialoog-body">
-        <div class="veld-rij">
-          <div class="veld">
-            <label for="naam">Naam en voornaam *</label>
-            <input type="text" id="naam" name="naam" required maxlength="100"
-                   placeholder="bv. Peeters Jan" autocomplete="name">
-          </div>
-          <div class="veld">
-            <label for="telefoon">Telefoonnummer *</label>
-            <input type="tel" id="telefoon" name="telefoon" required maxlength="30"
-                   placeholder="bv. 0470 12 34 56" autocomplete="tel">
-          </div>
-        </div>
+      <div class="stappen-balk" aria-hidden="true">
+        <span class="klaar"></span><span></span><span></span>
+      </div>
 
-        <div class="veld">
-          <label for="email">E-mailadres *</label>
-          <input type="email" id="email" name="email" required maxlength="200"
-                 placeholder="bv. jan.peeters@gmail.com" autocomplete="email">
-        </div>
-
+      <!-- Stap 1 · Wanneer -->
+      <div class="stap" id="stap-1" data-stap="1">
         <p id="weekdag-info" class="weekdag-info verborgen">
           Op maandag t/m donderdag verhuren we enkel voor teambuildings en
           vergaderingen, tussen 10:00 en 18:00, zonder muziek (vanaf 15 personen).
@@ -149,9 +208,32 @@
 
         <div class="veld-rij">
           <div class="veld">
-            <label id="type-feest-label" for="type-feest">Type feest *</label>
+            <label for="start-tijd">Starttijd</label>
+            <select id="start-tijd" name="startTijd" required></select>
+          </div>
+          <div class="veld">
+            <label for="eind-tijd">Eindtijd</label>
+            <select id="eind-tijd" name="eindTijd" required></select>
+            <small id="eind-tijd-hint">Uiterlijk 02:00 &rsquo;s nachts</small>
+          </div>
+        </div>
+
+        <div class="veld">
+          <span class="veld-label" id="opbouw-label">Hoe vroeg wil je inrichten?</span>
+          <div class="keuze-pillen pil-rij" role="radiogroup" aria-labelledby="opbouw-label">
+            <label class="pil"><input type="radio" name="opbouwMinuten" value="0"> Niet eerder</label>
+            <label class="pil"><input type="radio" name="opbouwMinuten" value="30"> 30 min</label>
+            <label class="pil"><input type="radio" name="opbouwMinuten" value="60"> 1 uur</label>
+            <label class="pil"><input type="radio" name="opbouwMinuten" value="90" checked> 1,5 uur</label>
+          </div>
+          <small id="opbouw-hint"></small>
+        </div>
+
+        <div class="veld-rij">
+          <div class="veld">
+            <label id="type-feest-label" for="type-feest">Type feest</label>
             <input type="text" id="type-feest" name="typeFeest" required maxlength="100"
-                   placeholder="bv. lentefeest" autocomplete="off">
+                   placeholder="bv. communie" autocomplete="off">
             <select id="type-feest-weekdag" name="typeFeestWeekdag" required hidden disabled>
               <option value="" disabled selected>Kies een optie</option>
               <option value="teambuilding">Teambuilding</option>
@@ -159,115 +241,131 @@
             </select>
           </div>
           <div class="veld">
-            <label for="aantal-personen">Aantal personen *</label>
+            <label for="aantal-personen">Aantal personen</label>
             <input type="number" id="aantal-personen" name="aantalPersonen" min="25" max="500" required
                    placeholder="bv. 50">
             <small id="aantal-personen-hint">Vanaf 25 personen</small>
           </div>
         </div>
+      </div>
+
+      <!-- Stap 2 · Jouw gegevens -->
+      <div class="stap" id="stap-2" data-stap="2" hidden>
+        <div class="veld">
+          <label for="naam">Naam en voornaam *</label>
+          <input type="text" id="naam" name="naam" required maxlength="100"
+                 placeholder="bv. Peeters Jan" autocomplete="name">
+        </div>
 
         <div class="veld-rij">
           <div class="veld">
-            <label for="start-tijd">Starttijd feest *</label>
-            <select id="start-tijd" name="startTijd" required></select>
+            <label for="telefoon">Telefoonnummer *</label>
+            <input type="tel" id="telefoon" name="telefoon" required maxlength="30"
+                   placeholder="bv. 0470 12 34 56" autocomplete="tel">
+            <small>We zetten de spaties zelf op de juiste plaats.</small>
           </div>
           <div class="veld">
-            <label for="eind-tijd">Eindtijd feest *</label>
-            <select id="eind-tijd" name="eindTijd" required></select>
-            <small id="eind-tijd-hint">Uiterlijk 02:00 &rsquo;s nachts</small>
+            <label for="email">E-mailadres *</label>
+            <input type="email" id="email" name="email" required maxlength="200"
+                   placeholder="bv. jan.peeters@gmail.com" autocomplete="email">
+            <small>Hierop komt de bevestiging.</small>
           </div>
         </div>
 
         <div class="veld">
-          <label for="opbouw">Hoe vroeg wil je komen om in te richten?</label>
-          <select id="opbouw" name="opbouwMinuten">
-            <option value="0">Niet eerder (vanaf de starttijd)</option>
-            <option value="30">30 minuten eerder</option>
-            <option value="60">1 uur eerder</option>
-            <option value="90" selected>1,5 uur eerder (maximum)</option>
-          </select>
-          <small id="opbouw-hint"></small>
+          <label for="opmerkingen">Opmerkingen <span>(optioneel)</span></label>
+          <textarea id="opmerkingen" name="opmerkingen" rows="3" maxlength="1000"
+                    placeholder="Iets wat we moeten weten?"></textarea>
         </div>
 
-        <div class="veld">
-          <label for="opmerkingen">Opmerkingen (optioneel)</label>
-          <textarea id="opmerkingen" name="opmerkingen" rows="2" maxlength="1000"></textarea>
-        </div>
+        <p class="veld-uitleg">
+          We gebruiken je gegevens enkel om deze reservering te regelen.
+          Bezoekers van de site zien nooit wie er geboekt heeft.
+        </p>
+      </div>
 
+      <!-- Stap 3 · Extra's en betalen -->
+      <div class="stap stap-extras" id="stap-3" data-stap="3" hidden>
         <fieldset class="extra-opties">
-          <div class="extra-kop">Extra opties <span>(optioneel)</span></div>
+          <legend class="verborgen">Extra opties</legend>
 
-          <div class="extra-sectie">
-            <span class="extra-vraag">Foodtruck van de vzw ("de Dikke Mier")?</span>
-            <div class="keuze-pillen">
-              <label class="pil"><input type="radio" name="foodtruckVzw" value="ja"> Ja</label>
-              <label class="pil"><input type="radio" name="foodtruckVzw" value="nee" checked> Nee</label>
+          <div class="extra-kaart" id="foodtruck-kaart">
+            <div class="extra-rij">
+              <div>
+                <div class="extra-naam">Foodtruck van de vzw</div>
+                <div class="extra-uitleg">&ldquo;De Dikke Mier&rdquo; — frietjes, hamburger of pita</div>
+              </div>
+              <div class="keuze-pillen">
+                <label class="pil pil-kort"><input type="radio" name="foodtruckVzw" value="ja"> Ja</label>
+                <label class="pil pil-kort"><input type="radio" name="foodtruckVzw" value="nee" checked> Nee</label>
+              </div>
             </div>
             <div class="extra-detail ingeklapt" data-toon-bij="foodtruckVzw=ja">
               <div class="klap-inhoud">
                 <div class="gerecht-rij">
-                  <label for="ft-frikandel">Frietjes met frikandel en saus — € 7,00 p.p.</label>
+                  <label for="ft-frikandel">Frietjes met frikandel en saus <span>— € 7 p.p.</span></label>
                   <input type="number" id="ft-frikandel" min="0" max="500" placeholder="0">
                 </div>
                 <div class="gerecht-rij">
-                  <label for="ft-hamburger">Hamburger met frietjes en saus — € 8,00 p.p.</label>
+                  <label for="ft-hamburger">Hamburger met frietjes en saus <span>— € 8 p.p.</span></label>
                   <input type="number" id="ft-hamburger" min="0" max="500" placeholder="0">
                 </div>
                 <div class="gerecht-rij">
-                  <label for="ft-pita">Pita met saus — € 6,00 p.p.</label>
+                  <label for="ft-pita">Pita met saus <span>— € 6 p.p.</span></label>
                   <input type="number" id="ft-pita" min="0" max="500" placeholder="0">
                 </div>
-                <small>Vul per gerecht het aantal personen in.</small>
-                <br>
-                <small>De frietjes en hamburgers zijn à volonté!</small>
+                <p>Vul per gerecht het aantal personen in. De frietjes en hamburgers zijn à volonté.</p>
               </div>
             </div>
           </div>
 
-          <div class="extra-sectie">
-            <span class="extra-vraag">Regel je zelf een foodtruck?</span>
-            <div class="keuze-pillen">
-              <label class="pil"><input type="radio" name="eigenFoodtruck" value="ja"> Ja</label>
-              <label class="pil"><input type="radio" name="eigenFoodtruck" value="nee" checked> Nee</label>
-            </div>
-            <div class="extra-detail ingeklapt" data-toon-bij="eigenFoodtruck=ja">
-              <div class="klap-inhoud">
-                Forfait <strong>€ 25,00</strong> voor elektriciteit, water, kabels en
-                afvalverwerking — wordt bij het totaal geteld.
+          <div class="extra-kaart">
+            <div class="extra-rij">
+              <div>
+                <div class="extra-naam">Eigen foodtruck</div>
+                <div class="extra-uitleg">Forfait € 25 voor stroom, water, kabels en afval</div>
+              </div>
+              <div class="keuze-pillen">
+                <label class="pil pil-kort"><input type="radio" name="eigenFoodtruck" value="ja"> Ja</label>
+                <label class="pil pil-kort"><input type="radio" name="eigenFoodtruck" value="nee" checked> Nee</label>
               </div>
             </div>
           </div>
 
-          <div class="extra-sectie">
-            <span class="extra-vraag">Breng je zelf een BBQ mee?</span>
-            <div class="keuze-pillen">
-              <label class="pil"><input type="radio" name="bbq" value="ja"> Ja</label>
-              <label class="pil"><input type="radio" name="bbq" value="nee" checked> Nee</label>
+          <div class="extra-kaart">
+            <div class="extra-rij">
+              <div>
+                <div class="extra-naam">Eigen BBQ</div>
+                <div class="extra-uitleg">Breng je zelf een BBQ mee?</div>
+              </div>
+              <div class="keuze-pillen">
+                <label class="pil pil-kort"><input type="radio" name="bbq" value="ja"> Ja</label>
+                <label class="pil pil-kort"><input type="radio" name="bbq" value="nee" checked> Nee</label>
+              </div>
             </div>
           </div>
 
-          <div class="extra-sectie" id="muziek-sectie">
-            <span class="extra-vraag">Muziek</span>
-            <div class="keuze-kolom">
-              <label><input type="radio" name="muziek" value="eigenDj"> Eigen DJ (voorziet zelf alle materiaal)</label>
-              <label><input type="radio" name="muziek" value="spotify"> Eigen Spotify-playlist</label>
-              <label><input type="radio" name="muziek" value="bar" checked> De bar verzorgt de muziek</label>
+          <div class="extra-kaart extra-kaart-kolom" id="muziek-sectie">
+            <div class="extra-naam" id="muziek-label">Muziek</div>
+            <div class="keuze-pillen pil-rij" role="radiogroup" aria-labelledby="muziek-label">
+              <label class="pil"><input type="radio" name="muziek" value="eigenDj"> Eigen DJ</label>
+              <label class="pil"><input type="radio" name="muziek" value="spotify"> Eigen Spotify-playlist</label>
+              <label class="pil"><input type="radio" name="muziek" value="bar" checked> De bar verzorgt de muziek</label>
             </div>
           </div>
-
         </fieldset>
 
         <div class="prijs-info">
+          <p class="label-klein">Je betaalt nu</p>
           <div id="prijs-regels"></div>
           <div class="prijs-totaal-rij">
             <span>Totaal</span>
             <strong id="prijs-totaal">€ 60</strong>
           </div>
           <p>
-            Direct online te betalen (o.a. Bancontact). De € 60 reservatiekosten
-            worden <strong>niet terugbetaald</strong>, behalve als de organisatie
-            zelf annuleert. De datum blijft 30 minuten voor jou vast terwijl je
-            betaalt.
+            Bancontact of kaart, via Mollie. De € 60 reservatiekosten worden
+            <strong>niet terugbetaald</strong>, behalve als de organisatie zelf
+            annuleert. De datum blijft 30 minuten voor jou vast terwijl je betaalt.
           </p>
         </div>
 
@@ -275,8 +373,7 @@
           <input type="checkbox" id="akkoord" required>
           <span>
             Ik ga akkoord met het totaalbedrag en begrijp dat de € 60
-            reservatiekosten niet worden terugbetaald (behalve bij annulering
-            door de organisatie). *
+            reservatiekosten niet worden terugbetaald.
           </span>
         </label>
 
@@ -285,19 +382,30 @@
           <span>
             Ik heb de <a href="https://www.8-duust.be/algemene-voorwaarden"
             target="_blank" rel="noopener">algemene voorwaarden</a> gelezen en
-            goedgekeurd. *
+            goedgekeurd.
           </span>
         </label>
 
         <!-- Cloudflare Turnstile (anti-bot); blijft leeg zolang er geen
              turnstileSiteKey in supabase-config.js staat. -->
         <div id="turnstile-houder" class="verborgen"></div>
+      </div>
 
-        <p id="formulier-fout" class="formulier-fout verborgen"></p>
+      <div class="stap" id="stap-fout-houder" hidden>
+        <p id="formulier-fout" class="formulier-fout"></p>
+      </div>
 
+      <!-- Voet: lopend totaal en de knoppen van de huidige stap. -->
+      <div class="dialoog-voet" id="dialoog-voet">
+        <div id="voet-totaal-blok">
+          <p class="label-klein">Nu te betalen</p>
+          <div class="voet-bedrag" id="voet-totaal">€ 60</div>
+        </div>
         <div class="dialoog-knoppen">
-          <button type="button" id="annuleer-knop">Annuleren</button>
-          <button type="submit" id="bevestig-knop" class="primair">Reserveren en € 60 betalen</button>
+          <button type="button" id="terug-knop" class="knop-rand">Terug</button>
+          <button type="button" id="annuleer-knop" class="knop-rand">Annuleren</button>
+          <button type="button" id="verder-knop" class="knop-rood">Verder naar je gegevens</button>
+          <button type="submit" id="bevestig-knop" class="knop-rood breed verborgen">Reserveren en € 60 betalen</button>
         </div>
       </div>
     </form>
@@ -305,22 +413,22 @@
 
   <!-- Statusdialoog na terugkeer van de Mollie-betaalpagina. Opent meteen
        met "we controleren je betaling" en slaat daarna om naar het resultaat
-       (bedankt / nog in verwerking / niet afgerond). Inhoud wordt per status
+       (gelukt / nog in verwerking / niet afgerond). Inhoud wordt per status
        gezet in app.js (toonBetalingsDialoog). -->
-  <dialog id="betaling-dialoog">
-    <div class="dialoog-kop">
-      <div>
-        <div class="dialoog-sublabel" id="betaling-sublabel"></div>
-        <div class="dialoog-titel" id="betaling-titel"></div>
+  <dialog id="betaling-dialoog" class="betaling-dialoog">
+    <div class="betaling-body">
+      <p class="label-klein" id="betaling-sublabel"></p>
+      <h2 class="betaling-titel" id="betaling-titel"></h2>
+      <p class="betaling-tekst" id="betaling-tekst"></p>
+      <div id="betaling-wacht" class="betaling-wacht verborgen">
+        <span class="betaling-spinner" aria-hidden="true"></span>
+        <span>Even geduld, dit duurt meestal maar een paar seconden.</span>
       </div>
-      <button type="button" id="betaling-sluit-knop" class="dialoog-sluit" aria-label="Sluiten">✕</button>
+      <div id="betaling-details" class="betaling-details"></div>
     </div>
-    <div class="dialoog-body betaling-body">
-      <div id="betaling-icoon" class="betaling-icoon" aria-hidden="true"></div>
-      <p id="betaling-tekst"></p>
-      <div class="dialoog-knoppen" id="betaling-knoppen">
-        <button type="button" id="betaling-ok-knop" class="primair">Sluiten</button>
-      </div>
+    <div class="betaling-knoppen" id="betaling-knoppen">
+      <button type="button" id="betaling-ok-knop" class="knop-rood">Terug naar de kalender</button>
+      <a id="betaling-bel-knop" class="knop-rand verborgen" href="tel:+32475419377">Bel ons</a>
     </div>
   </dialog>
 

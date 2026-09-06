@@ -244,7 +244,7 @@ function toonDetails(datumStr) {
     `${toon(details.start_tijd)}–${toon(details.eind_tijd)}`
   ];
   if (opbouwMinuten > 0 && details.opbouw_vanaf) {
-    subtitel.push(`opbouw vanaf ${details.opbouw_vanaf}`);
+    subtitel.push(`opbouw ${details.opbouw_vanaf}`);
   }
   detailSubtitelEl.textContent = subtitel.join(' · ');
 
@@ -368,7 +368,7 @@ function renderStatistieken() {
   sub.className = 'stat-sub';
   sub.textContent = details.oudeBoeking
     ? 'Raadpleeg de fysieke kalender'
-    : `${toon(details.aantal_personen)} pers. · ${toon(details.start_tijd)}–${toon(details.eind_tijd)}`;
+    : `${toon(details.aantal_personen)} pers. · ${toon(details.start_tijd)}–${toon(details.eind_tijd)} · ${toon(details.naam)}`;
   statVolgendEl.appendChild(sub);
 }
 
@@ -441,9 +441,15 @@ function renderKomendeLijst() {
     bedragEl.className = 'komende-bedrag';
     bedragEl.textContent = details.oudeBoeking ? '—' : bedrag(details.totaal_bedrag ?? 60);
 
+    const pijl = document.createElement('span');
+    pijl.className = 'komende-pijl';
+    pijl.setAttribute('aria-hidden', 'true');
+    pijl.textContent = '→';
+
     knop.appendChild(datumBlok);
     knop.appendChild(info);
     knop.appendChild(bedragEl);
+    knop.appendChild(pijl);
     knop.addEventListener('click', () => {
       getoondeMaand = new Date(Number(datumStr.slice(0, 4)), Number(datumStr.slice(5, 7)) - 1, 1);
       toonDetails(datumStr);
@@ -486,7 +492,7 @@ async function laadReserveringen() {
 async function startPortaal(session) {
   loginSectieEl.classList.add('verborgen');
   portaalSectieEl.classList.remove('verborgen');
-  ingelogdAlsEl.textContent = `Ingelogd als ${session.user.email}`;
+  ingelogdAlsEl.textContent = session.user.email;
 
   if (portaalGestart) return;
   portaalGestart = true;
