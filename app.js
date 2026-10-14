@@ -24,9 +24,6 @@ const STATUS_IN_AFWACHTING = 'in_afwachting';
 // wijzig prijzen dus altijd op beide plekken.
 const PRIJZEN = {
   reservatiekosten: 60,
-  frietjesFrikandel: 7,   // per persoon
-  hamburgerFrietjes: 8,   // per persoon
-  pita: 6,                // per persoon
   eigenFoodtruck: 25      // forfait stroom/water/kabels/afval
 };
 
@@ -516,50 +513,9 @@ function stopTypeFeestAnimatie() {
 
 // ---------- Extra opties ----------
 
-// Toont of verbergt de detailblokken op basis van de gekozen radio's.
-// Elk blok draagt data-toon-bij="veldnaam=waarde1|waarde2". De klasse
-// 'ingeklapt' laat het blok vloeiend open- en dichtklappen (zie style.css);
-// het omliggende kaartje krijgt 'open' voor de scheidingslijn erboven.
-// Velden in een dichtgeklapt blok worden ook uitgeschakeld, zodat verlaten
-// waarden (bv. eerst gerechten invullen en dan toch "nee" kiezen) nooit
-// meetellen of meegaan.
-function werkExtraDetailsBij() {
-  for (const blok of formulierEl.querySelectorAll('.extra-detail')) {
-    const [naam, waarden] = blok.dataset.toonBij.split('=');
-    const huidig = formulierEl.elements[naam]?.value;
-    const zichtbaar = waarden.split('|').includes(huidig);
-    blok.classList.toggle('ingeklapt', !zichtbaar);
-    blok.closest('.extra-kaart')?.classList.toggle('open', zichtbaar);
-    for (const veld of blok.querySelectorAll('input')) veld.disabled = !zichtbaar;
-  }
-}
-
-function veldAantal(id) {
-  const veld = document.getElementById(id);
-  if (veld.disabled) return 0;
-  return Number(veld.value) || 0;
-}
-
-const GERECHTEN = [
-  ['ft-frikandel', 'frietjesFrikandel', 'Frietjes met frikandel'],
-  ['ft-hamburger', 'hamburgerFrietjes', 'Hamburger met frietjes'],
-  ['ft-pita', 'pita', 'Pita']
-];
-
 // Spiegel van de berekening op de server, alleen voor de live weergave.
 function berekenPrijsregels() {
   const regels = [{ label: 'Reservatiekosten', bedrag: PRIJZEN.reservatiekosten }];
-  if (formulierEl.elements.foodtruckVzw.value === 'ja') {
-    for (const [id, prijsSleutel, label] of GERECHTEN) {
-      const aantal = veldAantal(id);
-      if (aantal > 0) {
-        regels.push({
-          label: `${label} (${aantal} × € ${PRIJZEN[prijsSleutel]})`,
-          bedrag: aantal * PRIJZEN[prijsSleutel]
-        });
-      }
-    }
-  }
   if (formulierEl.elements.eigenFoodtruck.value === 'ja') {
     regels.push({ label: 'Eigen foodtruck (forfait)', bedrag: PRIJZEN.eigenFoodtruck });
   }
@@ -663,7 +619,6 @@ function stapFout(nummer) {
       document.getElementById('eind-tijd').value
     );
   }
-  if (nummer === 3) return valideerExtras(verzamelExtras());
   return null;
 }
 
@@ -680,40 +635,13 @@ function volgendeStap() {
 // Bouwt het extras-object dat naar de server gaat. De server hervalideert
 // alles en berekent het bedrag opnieuw; dit is alleen de doorgegeven keuze.
 function verzamelExtras() {
-  const foodtruckGekozen = formulierEl.elements.foodtruckVzw.value === 'ja';
   const extras = {
-    foodtruckVzw: foodtruckGekozen
-      ? {
-          gekozen: true,
-          frietjesFrikandel: veldAantal('ft-frikandel'),
-          hamburgerFrietjes: veldAantal('ft-hamburger'),
-          pita: veldAantal('ft-pita')
-        }
-      : false,
     eigenFoodtruck: formulierEl.elements.eigenFoodtruck.value === 'ja',
     bbq: formulierEl.elements.bbq.value === 'ja'
   };
   // Op ma-do is muziek niet mogelijk: het veld gaat dan helemaal niet mee.
   if (!weekdagBoeking) extras.muziek = formulierEl.elements.muziek.value;
   return extras;
-}
-
-// Controle van de extra opties vóór verzenden; geeft een foutmelding of null.
-function valideerExtras(extras) {
-  if (extras.foodtruckVzw) {
-    const totaalGerechten = extras.foodtruckVzw.frietjesFrikandel +
-      extras.foodtruckVzw.hamburgerFrietjes + extras.foodtruckVzw.pita;
-    if (totaalGerechten < 1) {
-      return 'Kies minstens één gerecht bij de foodtruck van de vzw, of zet die optie op "nee".';
-    }
-    for (const [id] of GERECHTEN) {
-      const waarde = veldAantal(id);
-      if (!Number.isInteger(waarde) || waarde < 0 || waarde > 500) {
-        return 'Vul bij de foodtruck geldige aantallen in (0 t/m 500).';
-      }
-    }
-  }
-  return null;
 }
 
 // Past het formulier aan op de gekozen dag: op ma-do een vaste keuzelijst
@@ -754,7 +682,6 @@ function openDialoog(datumStr) {
   vulStartTijden();
   werkEindTijdenBij();
   werkOpbouwHintBij();
-  werkExtraDetailsBij();
   werkTotaalBij();
   toonStap(1);
   renderKalender(); // de gekozen dag licht op in de kalender
@@ -853,11 +780,6 @@ async function verwerkFormulier(event) {
     return;
   }
   const extras = verzamelExtras();
-  const extrasFout = valideerExtras(extras);
-  if (extrasFout) {
-    toonFormulierFout(extrasFout);
-    return;
-  }
   if (turnstileActief() && !turnstileToken()) {
     toonFormulierFout('Wacht even tot de beveiligingscontrole klaar is en probeer opnieuw.');
     return;
@@ -1089,12 +1011,8 @@ function koppelGebeurtenissen() {
   for (const radio of formulierEl.querySelectorAll('input[name="opbouwMinuten"]')) {
     radio.addEventListener('change', werkOpbouwHintBij);
   }
-  // Eén gedelegeerde listener voor alle extra opties: 'input' vuurt zowel
-  // voor radio's als voor de aantal-velden.
-  document.querySelector('.extra-opties').addEventListener('input', () => {
-    werkExtraDetailsBij();
-    werkTotaalBij();
-  });
+  // Eén gedelegeerde listener voor alle extra opties.
+  document.querySelector('.extra-opties').addEventListener('input', werkTotaalBij);
   koppelTelefoonFormattering();
 }
 

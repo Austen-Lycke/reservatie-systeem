@@ -182,9 +182,9 @@ function detailRijen(details) {
 
   const keuzes = details.extra_opties?.keuzes;
   if (keuzes) {
-    // Drankkaarten en springkastelen bestaan niet meer en op ma-do is er
-    // geen muziekkeuze; alleen tonen wat er bij het boeken echt is
-    // vastgelegd (oude reserveringen behouden zo hun rijen).
+    // Drankkaarten, springkastelen en de foodtruck van de vzw bestaan niet
+    // meer en op ma-do is er geen muziekkeuze; alleen tonen wat er bij het
+    // boeken echt is vastgelegd (oude reserveringen behouden zo hun rijen).
     if (keuzes.drankkaarten !== undefined) {
       const drankkaarten = keuzes.drankkaarten ?? {};
       let drankkaartTekst = DRANKKAART_LABELS[String(drankkaarten.keuze)] ?? '—';
@@ -203,7 +203,8 @@ function detailRijen(details) {
     rijen.push(
       ['Foodtruck / BBQ', `${keuzes.eigenFoodtruck ? 'Ja' : 'Nee'} / ${keuzes.bbq ? 'Ja' : 'Nee'}`]
     );
-    if (keuzes.foodtruckVzw && keuzes.foodtruckVzw.gekozen) {
+    // Oude reserveringen: een object met aantallen per gerecht, of false.
+    if (keuzes.foodtruckVzw) {
       rijen.push(['Foodtruck vzw', 'Ja — zie prijsregels']);
     }
   }

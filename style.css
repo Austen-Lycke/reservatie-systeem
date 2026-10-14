@@ -807,7 +807,7 @@ body:has(dialog[open]) { overflow: hidden; }
   box-shadow: var(--focus-ring);
 }
 .veld select:disabled { color: var(--grijs); background: var(--zacht); }
-.veld small, .extra-detail small, .extra-detail p {
+.veld small {
   font-size: var(--tekst-mini);
   color: var(--grijs);
   margin: 0;
@@ -882,7 +882,6 @@ body:has(dialog[open]) { overflow: hidden; }
   gap: 16px;
   padding: 16px 20px;
 }
-.extra-kaart.open .extra-rij { border-bottom: 1px solid var(--rand-zacht); }
 .extra-naam {
   font-size: var(--tekst-veld);
   font-weight: 700;
@@ -894,62 +893,6 @@ body:has(dialog[open]) { overflow: hidden; }
 .extra-rij .keuze-pillen { gap: 6px; flex: none; }
 .extra-kaart-kolom { padding: 16px 20px; }
 .extra-kaart-kolom .extra-naam { margin-bottom: 12px; }
-
-/* Detailblok (gerechten) klapt vloeiend open en dicht via de grid-rows-truc:
-   de buitenkant animeert van 0fr naar 1fr, de binnenkant (.klap-inhoud)
-   knipt de inhoud af. */
-.extra-detail {
-  display: grid;
-  grid-template-rows: 1fr;
-  opacity: 1;
-  transition: grid-template-rows var(--duur-lang) var(--vloeiend),
-              opacity var(--duur-normaal) var(--vloeiend),
-              visibility var(--duur-lang);
-}
-.extra-detail > .klap-inhoud {
-  min-height: 0;
-  overflow: hidden;
-  padding: 16px 20px;
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  transition: padding-top var(--duur-lang) var(--vloeiend),
-              padding-bottom var(--duur-lang) var(--vloeiend);
-}
-.extra-detail.ingeklapt {
-  grid-template-rows: 0fr;
-  opacity: 0;
-  visibility: hidden; /* dichtgeklapt: niet focusbaar/voorleesbaar */
-}
-.extra-detail.ingeklapt > .klap-inhoud {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-.gerecht-rij {
-  display: grid;
-  grid-template-columns: 1fr 96px;
-  gap: 12px;
-  align-items: center;
-}
-.gerecht-rij label { font-size: var(--tekst-basis); }
-.gerecht-rij label span { color: var(--grijs); }
-.gerecht-rij input {
-  min-height: 40px;
-  padding: 0 12px;
-  border: 1px solid var(--rand-knop);
-  border-radius: var(--radius-klein);
-  font: inherit;
-  font-size: var(--tekst-basis);
-  width: 100%;
-  transition: border-color var(--duur-kort) var(--vloeiend),
-              box-shadow var(--duur-kort) var(--vloeiend);
-}
-.gerecht-rij input:focus {
-  border-color: var(--rood);
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
 
 /* Prijsoverzicht: donker blok. */
 .prijs-info {
@@ -1703,7 +1646,7 @@ body:has(dialog[open]) { overflow: hidden; }
   /* Aanraakschermen: velden minstens 16px (anders zoomt iOS Safari in bij
      focus) en bladerknoppen/sluitknop minstens 44px groot. */
   .veld input, .veld select, .veld textarea,
-  .gerecht-rij input, .login-formulier input, .komende-kop select {
+  .login-formulier input, .komende-kop select {
     font-size: 1rem;
   }
   .kalender-kop button { width: 44px; height: 44px; }

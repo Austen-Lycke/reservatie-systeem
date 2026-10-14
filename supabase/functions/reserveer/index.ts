@@ -17,9 +17,6 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 // dus altijd op beide plekken.)
 const PRIJZEN = {
   reservatiekosten: 60,
-  frietjesFrikandel: 7,   // per persoon
-  hamburgerFrietjes: 8,   // per persoon
-  pita: 6,                // per persoon
   eigenFoodtruck: 25      // forfait stroom/water/kabels/afval
 };
 
@@ -48,10 +45,6 @@ function eersteBoekbareDatum(): string {
 
 type Prijsregel = { label: string; bedrag: number };
 
-function geldigAantal(n: unknown): n is number {
-  return Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 500;
-}
-
 // Controleert de extra opties en berekent de prijsregels + het totaal.
 // Ontbrekende velden gelden als "nee"/"geen", zodat een oude (gecachte)
 // versie van het formulier zonder extra's gewoon blijft werken.
@@ -62,33 +55,13 @@ function valideerExtras(ruw: unknown, weekdag: boolean):
     { label: 'Reservatiekosten', bedrag: PRIJZEN.reservatiekosten }
   ];
 
-  // Foodtruck van de vzw: aantal personen per gerecht.
+  // De foodtruck van de vzw bestaat niet meer (verkocht). Een oud (gecacht)
+  // formulier kan de keuze nog meesturen; stilzwijgend negeren zou minder
+  // aanrekenen dan de klant op het scherm zag, dus expliciet weigeren.
   const ft = (extras.foodtruckVzw && typeof extras.foodtruckVzw === 'object'
     ? extras.foodtruckVzw : {}) as Record<string, unknown>;
-  const foodtruckGekozen = ft.gekozen === true;
-  const gerechten: [keyof typeof PRIJZEN, string, unknown][] = [
-    ['frietjesFrikandel', 'Frietjes met frikandel', ft.frietjesFrikandel],
-    ['hamburgerFrietjes', 'Hamburger met frietjes', ft.hamburgerFrietjes],
-    ['pita', 'Pita', ft.pita]
-  ];
-  const keuzesFoodtruck: Record<string, number> = {};
-  let gerechtenTotaalAantal = 0;
-  if (foodtruckGekozen) {
-    for (const [sleutel, label, waarde] of gerechten) {
-      const aantal = waarde === undefined || waarde === null || waarde === '' ? 0 : Number(waarde);
-      if (!geldigAantal(aantal)) return { fout: 'Ongeldige extra opties.' };
-      keuzesFoodtruck[sleutel] = aantal;
-      gerechtenTotaalAantal += aantal;
-      if (aantal > 0) {
-        prijsregels.push({
-          label: `${label} (${aantal} × € ${PRIJZEN[sleutel]})`,
-          bedrag: aantal * PRIJZEN[sleutel]
-        });
-      }
-    }
-    if (gerechtenTotaalAantal < 1) {
-      return { fout: 'Kies minstens één gerecht bij de foodtruck van de vzw, of zet die optie op "nee".' };
-    }
+  if (ft.gekozen === true) {
+    return { fout: 'De foodtruck van de vzw is niet meer beschikbaar. Herlaad de pagina en probeer opnieuw.' };
   }
 
   // Eigen foodtruck: vast forfait.
@@ -132,7 +105,6 @@ function valideerExtras(ruw: unknown, weekdag: boolean):
 
   return {
     keuzes: {
-      foodtruckVzw: foodtruckGekozen ? keuzesFoodtruck : false,
       eigenFoodtruck,
       bbq,
       ...(muziek !== undefined && { muziek })
